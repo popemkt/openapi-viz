@@ -34,6 +34,7 @@ export default [
         Worker: 'readonly',
         localStorage: 'readonly',
         HTMLElement: 'readonly',
+        HTMLDivElement: 'readonly',
         HTMLInputElement: 'readonly',
         MouseEvent: 'readonly',
         KeyboardEvent: 'readonly',

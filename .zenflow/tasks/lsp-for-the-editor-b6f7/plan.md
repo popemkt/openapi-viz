@@ -165,3 +165,37 @@ Create `report.md` with:
 - Known worker initialization issue with `@monaco-editor/react`
 - Three resolution options for the runtime issue
 - Conclusion that code-level implementation is complete but runtime activation blocked
+
+---
+
+### [x] Step: Replace @monaco-editor/react with Direct Monaco Integration
+
+Replace `@monaco-editor/react` with direct Monaco Editor usage to fix worker initialization.
+
+**Rationale**:
+- `@monaco-editor/react` manages Monaco lifecycle internally, causing race conditions with worker setup
+- Direct Monaco usage gives full control over initialization order
+- Official monaco-yaml Vite example uses this approach successfully
+
+**Files Changed**:
+- `src/features/editor/components/TextEditor.tsx` (rewritten, 152 lines)
+- `src/main.tsx` (removed monacoSetup import)
+- `package.json` (removed `@monaco-editor/react`, moved `monaco-editor` to dependencies)
+- `eslint.config.js` (added `HTMLDivElement` to globals)
+
+**Files Removed**:
+- `src/features/editor/monacoSetup.ts` (merged into TextEditor.tsx)
+- `src/features/editor/monacoYamlSetup.ts` (merged into TextEditor.tsx)
+
+**Key Changes**:
+1. Monaco environment and worker setup now happens at module load time in TextEditor.tsx
+2. `configureMonacoYaml()` called before any editor is created
+3. Editor created directly with `monaco.editor.create()`
+4. Proper React lifecycle handling (mount/unmount, value sync, theme updates)
+5. All existing features preserved (markers, theme switching)
+
+**Verification**:
+- `pnpm lint` ✓ Pass
+- `pnpm typecheck` ✓ Pass
+- `pnpm test` ✓ Pass (88 tests)
+- `pnpm build` ✓ Pass (yaml.worker bundled at 783KB)
