@@ -19,6 +19,12 @@ export default defineConfig({
       '@': '/src',
     },
   },
+  worker: {
+    format: 'es',
+  },
+  optimizeDeps: {
+    include: ['monaco-yaml'],
+  },
   build: {
     target: 'esnext',
     minify: 'esbuild',

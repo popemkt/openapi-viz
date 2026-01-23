@@ -75,7 +75,8 @@ Create `src/features/editor/monacoYamlSetup.ts` with:
 
 ---
 
-### [ ] Step: Update Vite Configuration
+### [x] Step: Update Vite Configuration
+<!-- chat-id: d5fb7b62-034b-48c1-ba99-370895582020 -->
 
 Modify `vite.config.ts` to:
 - Configure worker handling for monaco-yaml
@@ -85,8 +86,8 @@ Modify `vite.config.ts` to:
 - `vite.config.ts` (modify, ~10 lines)
 
 **Verification**:
-- `pnpm build` completes successfully
-- Worker is bundled correctly
+- `pnpm build` completes successfully ✓
+- Worker is bundled correctly ✓
 
 ---
 
