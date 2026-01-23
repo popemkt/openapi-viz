@@ -46,7 +46,8 @@ pnpm add monaco-yaml
 
 ---
 
-### [ ] Step: Create YAML Worker File
+### [x] Step: Create YAML Worker File
+<!-- chat-id: 6790c3ce-62c1-4345-b743-0b273b7a6193 -->
 
 Create `src/features/editor/yaml.worker.ts` for Vite compatibility with monaco-yaml's web worker.
 
