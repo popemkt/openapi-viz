@@ -1,27 +1,11 @@
+// Import Monaco setup first to ensure workers are configured before Monaco loads
+import '../monacoSetup';
 import Editor, { type Monaco, type OnMount, type BeforeMount } from '@monaco-editor/react';
 import { useCallback, useEffect, useRef } from 'react';
 import type * as monaco from 'monaco-editor';
 import { useSpecStore, useEditorStore } from '@/stores';
 import { useUIStore } from '@/stores';
 import { setupMonacoYaml } from '../monacoYamlSetup';
-
-// Configure Monaco environment to use the YAML worker
-// This must be done before Monaco loads
-window.MonacoEnvironment = {
-  getWorker(_workerId: string, label: string) {
-    if (label === 'yaml') {
-      return new Worker(
-        new URL('../yaml.worker.ts', import.meta.url),
-        { type: 'module' }
-      );
-    }
-    // Default editor worker
-    return new Worker(
-      new URL('monaco-editor/esm/vs/editor/editor.worker.js', import.meta.url),
-      { type: 'module' }
-    );
-  },
-};
 
 export function TextEditor() {
   const { rawText, setText, parseErrors } = useSpecStore();

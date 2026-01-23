@@ -23,7 +23,8 @@ export default defineConfig({
     format: 'es',
   },
   optimizeDeps: {
-    include: ['monaco-yaml'],
+    include: ['monaco-yaml', 'monaco-editor'],
+    exclude: ['monaco-yaml/yaml.worker'],
   },
   build: {
     target: 'esnext',
