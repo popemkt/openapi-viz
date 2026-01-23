@@ -199,3 +199,25 @@ Replace `@monaco-editor/react` with direct Monaco Editor usage to fix worker ini
 - `pnpm typecheck` ✓ Pass
 - `pnpm test` ✓ Pass (88 tests)
 - `pnpm build` ✓ Pass (yaml.worker bundled at 783KB)
+
+---
+
+## Future Enhancements
+
+### $ref Navigation and Rename Support
+
+`monaco-yaml` provides clickable links for `$ref` but does not support true go-to-definition or rename refactoring. These features require custom implementation:
+
+**Features to implement**:
+- **Go-to-definition**: Ctrl+Click on `$ref: '#/components/schemas/Pet'` jumps to the `Pet` schema definition
+- **Find all references**: Right-click to find all usages of a schema
+- **Rename**: Rename a schema and update all `$ref` references
+
+**Implementation approach**:
+1. Parse YAML to extract all `$ref` values and their locations
+2. Register Monaco `DefinitionProvider` for go-to-definition
+3. Register Monaco `ReferenceProvider` for find all references
+4. Register Monaco `RenameProvider` for rename refactoring
+5. Use existing YAML parser (`yaml` package) already in dependencies
+
+**Estimated effort**: ~150-200 lines in a new `src/features/editor/refNavigation.ts` file
