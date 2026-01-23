@@ -32,7 +32,8 @@ Created `spec.md` with:
 
 ---
 
-### [ ] Step: Install Dependencies
+### [x] Step: Install Dependencies
+<!-- chat-id: a0eeeece-4b68-4e01-8bbd-6602b544774d -->
 
 Install the `monaco-yaml` package:
 ```bash
