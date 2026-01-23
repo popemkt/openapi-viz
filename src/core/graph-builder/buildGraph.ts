@@ -9,7 +9,7 @@ import type {
   Endpoint,
   Schema,
 } from '@/types';
-import { EDGE_COLORS } from '@/constants';
+import { EDGE_COLORS, EDGE_LABELS } from '@/constants';
 
 export interface GraphBuildResult {
   nodes: GraphNode[];
@@ -159,15 +159,41 @@ function detectCircularEdges(allSchemas: Map<string, Schema>): Set<string> {
 }
 
 /**
+ * Represents a schema reference with its edge type
+ */
+interface SchemaRefInfo {
+  schemaName: string;
+  edgeType: EdgeType;
+}
+
+/**
  * Gets all direct schema references from a schema (non-recursive).
+ * Returns both the schema name and the appropriate edge type.
  */
 function getDirectSchemaRefs(schema: Schema): string[] {
-  const refs: string[] = [];
+  // For backward compatibility with detectCircularEdges, return just names
+  return getDirectSchemaRefsWithType(schema).map((ref) => ref.schemaName);
+}
+
+/**
+ * Gets all direct schema references from a schema with their edge types.
+ */
+function getDirectSchemaRefsWithType(schema: Schema): SchemaRefInfo[] {
+  const refs: SchemaRefInfo[] = [];
+  const seen = new Set<string>();
+
+  const addRef = (schemaName: string, edgeType: EdgeType) => {
+    const key = `${schemaName}-${edgeType}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      refs.push({ schemaName, edgeType });
+    }
+  };
 
   // Check direct $ref
   if (schema.$ref) {
     const refName = extractSchemaRef(schema.$ref);
-    if (refName) refs.push(refName);
+    if (refName) addRef(refName, 'schema-ref');
   }
 
   // Check properties
@@ -175,46 +201,65 @@ function getDirectSchemaRefs(schema: Schema): string[] {
     for (const prop of Object.values(schema.properties)) {
       if (prop.$ref) {
         const refName = extractSchemaRef(prop.$ref);
-        if (refName) refs.push(refName);
+        if (refName) addRef(refName, 'schema-ref');
       }
-      // Check items in arrays
+      // Check items in arrays (property is an array type)
       if (prop.items?.$ref) {
         const refName = extractSchemaRef(prop.items.$ref);
-        if (refName) refs.push(refName);
+        if (refName) addRef(refName, 'array-items');
       }
     }
   }
 
-  // Check allOf, oneOf, anyOf
-  for (const composition of [schema.allOf, schema.oneOf, schema.anyOf]) {
-    if (composition) {
-      for (const subSchema of composition) {
-        if (subSchema.$ref) {
-          const refName = extractSchemaRef(subSchema.$ref);
-          if (refName) refs.push(refName);
-        }
+  // Check allOf
+  if (schema.allOf) {
+    for (const subSchema of schema.allOf) {
+      if (subSchema.$ref) {
+        const refName = extractSchemaRef(subSchema.$ref);
+        if (refName) addRef(refName, 'allOf');
       }
     }
   }
 
-  // Check array items
+  // Check oneOf
+  if (schema.oneOf) {
+    for (const subSchema of schema.oneOf) {
+      if (subSchema.$ref) {
+        const refName = extractSchemaRef(subSchema.$ref);
+        if (refName) addRef(refName, 'oneOf');
+      }
+    }
+  }
+
+  // Check anyOf
+  if (schema.anyOf) {
+    for (const subSchema of schema.anyOf) {
+      if (subSchema.$ref) {
+        const refName = extractSchemaRef(subSchema.$ref);
+        if (refName) addRef(refName, 'anyOf');
+      }
+    }
+  }
+
+  // Check array items at schema level
   if (schema.items?.$ref) {
     const refName = extractSchemaRef(schema.items.$ref);
-    if (refName) refs.push(refName);
+    if (refName) addRef(refName, 'array-items');
   }
 
-  return [...new Set(refs)]; // Deduplicate
+  return refs;
 }
 
 function findSchemaRefsInSchema(
   schema: Schema,
   circularEdges: Set<string>
-): Array<{ schemaName: string; isCircular: boolean }> {
-  const directRefs = getDirectSchemaRefs(schema);
+): Array<{ schemaName: string; edgeType: EdgeType; isCircular: boolean }> {
+  const directRefs = getDirectSchemaRefsWithType(schema);
 
-  return directRefs.map((refName) => ({
-    schemaName: refName,
-    isCircular: circularEdges.has(`${schema.id}->${refName}`),
+  return directRefs.map((ref) => ({
+    schemaName: ref.schemaName,
+    edgeType: ref.edgeType,
+    isCircular: circularEdges.has(`${schema.id}->${ref.schemaName}`),
   }));
 }
 
@@ -281,18 +326,32 @@ export function buildGraph(spec: ParsedSpec): GraphBuildResult {
 
     // Create edges between schemas (with circular reference handling)
     const schemaRefs = findSchemaRefsInSchema(schema, circularEdges);
-    for (const { schemaName, isCircular } of schemaRefs) {
+    for (const { schemaName, edgeType: baseEdgeType, isCircular } of schemaRefs) {
       if (schemaMap.has(schemaName)) {
-        const edgeType: EdgeType = isCircular ? 'circular' : 'schema-ref';
+        // Circular references override the base edge type
+        const edgeType: EdgeType = isCircular ? 'circular' : baseEdgeType;
+        const label = EDGE_LABELS[edgeType];
+
+        // Determine edge styling based on type
+        // - circular: dashed + animated
+        // - oneOf/anyOf: dashed (represents alternative/optional)
+        // - allOf: solid (represents required composition)
+        // - array-items: solid
+        // - schema-ref: solid
+        const isDashed = isCircular || edgeType === 'oneOf' || edgeType === 'anyOf';
+
         edges.push({
-          id: `schema-${schema.id}-${schemaName}`,
+          id: `schema-${schema.id}-${schemaName}-${edgeType}`,
           source: `schema-${schema.id}`,
           target: `schema-${schemaName}`,
-          data: { edgeType, label: isCircular ? 'circular' : 'ref' },
+          data: { edgeType, label },
           style: {
             stroke: EDGE_COLORS[edgeType],
-            strokeDasharray: isCircular ? '5,5' : undefined,
+            strokeDasharray: isDashed ? '5,5' : undefined,
           },
+          label,
+          labelStyle: { fontSize: 10, fill: EDGE_COLORS[edgeType] },
+          labelBgStyle: { fill: 'white', fillOpacity: 0.8 },
           animated: isCircular,
         });
       }

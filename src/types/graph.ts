@@ -43,7 +43,11 @@ export type EdgeType =
   | 'response'
   | 'parameter'
   | 'schema-ref'
-  | 'circular';
+  | 'circular'
+  | 'allOf'
+  | 'oneOf'
+  | 'anyOf'
+  | 'array-items';
 
 /**
  * Extended edge data

@@ -10,6 +10,10 @@ export const EDGE_COLORS = {
   parameter: '#8b5cf6',
   'schema-ref': '#64748b',
   circular: '#ef4444',
+  allOf: '#f59e0b', // amber - solid composition (all required)
+  oneOf: '#06b6d4', // cyan - exclusive choice
+  anyOf: '#10b981', // emerald - flexible choice
+  'array-items': '#a855f7', // purple - array relationship
 };
 
 export const EDGE_LABELS = {
@@ -18,4 +22,8 @@ export const EDGE_LABELS = {
   parameter: 'parameter',
   'schema-ref': 'references',
   circular: 'circular ref',
+  allOf: 'extends',
+  oneOf: 'one of',
+  anyOf: 'any of',
+  'array-items': 'items',
 };

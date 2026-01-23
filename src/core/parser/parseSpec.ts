@@ -40,12 +40,46 @@ function extractSchemaType(schemaObj: Record<string, unknown>): SchemaType {
   if (schemaObj.$ref) return 'object';
   if (schemaObj.properties) return 'object';
   if (schemaObj.items) return 'array';
+  // Composition types are typically object-like
+  if (schemaObj.allOf || schemaObj.oneOf || schemaObj.anyOf) return 'object';
   return 'object';
+}
+
+/**
+ * Extracts composition schemas (allOf, oneOf, anyOf) from an array of sub-schemas.
+ * Each sub-schema is recursively extracted to preserve nested structures.
+ */
+function extractCompositionSchemas(
+  composition: unknown,
+  lineNumber: number
+): Schema[] | undefined {
+  if (!Array.isArray(composition) || composition.length === 0) {
+    return undefined;
+  }
+
+  return composition.map((subSchema, index) => {
+    const schemaObj = subSchema as Record<string, unknown>;
+    // Generate a unique name for inline composed schemas
+    const name = schemaObj.$ref
+      ? extractRefName(schemaObj.$ref as string) || `composed-${index}`
+      : `composed-${index}`;
+    return extractSchema(name, schemaObj, lineNumber);
+  });
+}
+
+/**
+ * Extracts the schema name from a $ref string.
+ * E.g., "#/components/schemas/Pet" -> "Pet"
+ */
+function extractRefName(ref: string): string | null {
+  const match = ref.match(/#\/components\/schemas\/(.+)/);
+  return match ? match[1] : null;
 }
 
 function extractSchemaProperties(
   schemaObj: Record<string, unknown>,
-  requiredFields: string[] = []
+  requiredFields: string[] = [],
+  lineNumber: number = 1
 ): Record<string, SchemaProperty> | undefined {
   const properties = schemaObj.properties as Record<string, Record<string, unknown>> | undefined;
   if (!properties) return undefined;
@@ -60,6 +94,10 @@ function extractSchemaProperties(
       format: prop.format as string | undefined,
       enum: prop.enum as unknown[] | undefined,
       $ref: prop.$ref as string | undefined,
+      // Handle array items in properties
+      items: prop.items
+        ? extractSchema('items', prop.items as Record<string, unknown>, lineNumber)
+        : undefined,
     };
   }
   return result;
@@ -77,10 +115,18 @@ function extractSchema(
     name,
     type: extractSchemaType(schemaObj),
     description: schemaObj.description as string | undefined,
-    properties: extractSchemaProperties(schemaObj, requiredFields),
+    properties: extractSchemaProperties(schemaObj, requiredFields, lineNumber),
     required: requiredFields,
     enum: schemaObj.enum as unknown[] | undefined,
     $ref: schemaObj.$ref as string | undefined,
+    // Composition types
+    allOf: extractCompositionSchemas(schemaObj.allOf, lineNumber),
+    oneOf: extractCompositionSchemas(schemaObj.oneOf, lineNumber),
+    anyOf: extractCompositionSchemas(schemaObj.anyOf, lineNumber),
+    // Array items
+    items: schemaObj.items
+      ? extractSchema('items', schemaObj.items as Record<string, unknown>, lineNumber)
+      : undefined,
     sourceLocation: createSourceLocation(lineNumber),
   };
 }

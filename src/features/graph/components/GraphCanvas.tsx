@@ -6,6 +6,7 @@ import {
   MiniMap,
   BackgroundVariant,
   type Node,
+  type NodeChange,
 } from '@xyflow/react';
 import { useGraphStore } from '@/stores';
 import { EndpointNode } from './EndpointNode';
@@ -20,7 +21,7 @@ const nodeTypes: Record<string, any> = {
 };
 
 export function GraphCanvas() {
-  const { nodes: storeNodes, edges: storeEdges, selectNode, selectedNodeId } = useGraphStore();
+  const { nodes: storeNodes, edges: storeEdges, selectNode, selectedNodeId, setNodes } = useGraphStore();
 
   // Apply filters to nodes and edges
   const { filteredNodes, filteredEdges } = useFilteredGraph(storeNodes, storeEdges);
@@ -35,6 +36,37 @@ export function GraphCanvas() {
   const handlePaneClick = useCallback(() => {
     selectNode(null);
   }, [selectNode]);
+
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      // Only handle position changes for dragging - ignore other change types
+      const positionChanges = changes.filter(
+        (change): change is NodeChange & { type: 'position'; position: { x: number; y: number } } =>
+          change.type === 'position' && 'position' in change && change.position !== undefined
+      );
+
+      if (positionChanges.length === 0) {
+        return;
+      }
+
+      // Create a map of updated positions from position changes
+      const updatedPositions = new Map(
+        positionChanges.map((change) => [change.id, change.position])
+      );
+
+      // Update store nodes with new positions where applicable
+      const updatedStoreNodes = storeNodes.map((node) => {
+        const newPosition = updatedPositions.get(node.id);
+        if (newPosition && (node.position.x !== newPosition.x || node.position.y !== newPosition.y)) {
+          return { ...node, position: newPosition };
+        }
+        return node;
+      });
+
+      setNodes(updatedStoreNodes);
+    },
+    [storeNodes, setNodes]
+  );
 
   // Apply selection styling
   const nodesWithSelection = useMemo(() => {
@@ -53,6 +85,7 @@ export function GraphCanvas() {
           edges={filteredEdges}
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}
+          onNodesChange={handleNodesChange}
           nodeTypes={nodeTypes}
           fitView
           fitViewOptions={{ padding: 0.2 }}

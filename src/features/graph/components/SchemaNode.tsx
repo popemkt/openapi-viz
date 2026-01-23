@@ -3,7 +3,8 @@ import { Handle, Position } from '@xyflow/react';
 import type { SchemaNodeData, SchemaProperty } from '@/types';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { BoxIcon } from 'lucide-react';
+import { BoxIcon, LayersIcon, SplitIcon, MergeIcon, ListIcon } from 'lucide-react';
+import { EDGE_COLORS } from '@/constants/colors';
 
 interface SchemaNodeProps {
   data: SchemaNodeData;
@@ -15,6 +16,13 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
 
   const propertyCount = schema.properties ? Object.keys(schema.properties).length : 0;
   const requiredCount = schema.required?.length || 0;
+
+  // Detect composition types
+  const hasAllOf = schema.allOf && schema.allOf.length > 0;
+  const hasOneOf = schema.oneOf && schema.oneOf.length > 0;
+  const hasAnyOf = schema.anyOf && schema.anyOf.length > 0;
+  const hasItems = !!schema.items;
+  const hasComposition = hasAllOf || hasOneOf || hasAnyOf || hasItems;
 
   return (
     <div
@@ -32,6 +40,48 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
           {schema.name}
         </span>
       </div>
+
+      {/* Composition type badges */}
+      {hasComposition && (
+        <div className="flex flex-wrap gap-1 px-3 pt-2">
+          {hasAllOf && (
+            <Badge
+              className="text-[10px] text-white"
+              style={{ backgroundColor: EDGE_COLORS.allOf }}
+            >
+              <LayersIcon className="mr-1 h-3 w-3" />
+              allOf
+            </Badge>
+          )}
+          {hasOneOf && (
+            <Badge
+              className="text-[10px] text-white"
+              style={{ backgroundColor: EDGE_COLORS.oneOf }}
+            >
+              <SplitIcon className="mr-1 h-3 w-3" />
+              oneOf
+            </Badge>
+          )}
+          {hasAnyOf && (
+            <Badge
+              className="text-[10px] text-white"
+              style={{ backgroundColor: EDGE_COLORS.anyOf }}
+            >
+              <MergeIcon className="mr-1 h-3 w-3" />
+              anyOf
+            </Badge>
+          )}
+          {hasItems && (
+            <Badge
+              className="text-[10px] text-white"
+              style={{ backgroundColor: EDGE_COLORS['array-items'] }}
+            >
+              <ListIcon className="mr-1 h-3 w-3" />
+              array
+            </Badge>
+          )}
+        </div>
+      )}
 
       {/* Properties info */}
       <div className="px-3 py-2">
