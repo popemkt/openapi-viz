@@ -59,7 +59,8 @@ Create `src/features/editor/yaml.worker.ts` for Vite compatibility with monaco-y
 
 ---
 
-### [ ] Step: Create Monaco YAML Configuration
+### [x] Step: Create Monaco YAML Configuration
+<!-- chat-id: cb877e5c-e139-484c-b183-b2264350cb0f -->
 
 Create `src/features/editor/monacoYamlSetup.ts` with:
 - `configureMonacoYaml()` call
