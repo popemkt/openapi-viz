@@ -1,0 +1,852 @@
+# Comprehensive OpenAPI Specification Demo
+# This spec demonstrates all relationship types and features supported by the parser
+#
+# Features demonstrated:
+# - Polymorphism with discriminator
+# - Composition (allOf, oneOf, anyOf)
+# - additionalProperties with schema refs (Map/Dictionary pattern)
+# - Tuple types (prefixItems)
+# - Negation schemas (not)
+# - Nested composition in properties
+# - Circular references
+# - Component types (responses, parameters, requestBodies, headers, links, callbacks)
+
+openapi: "3.1.0"
+info:
+  title: Comprehensive Demo API
+  description: |
+    This OpenAPI specification demonstrates all the relationship types and features
+    supported by the visualization tool. Use this as a reference when creating your own specs.
+  version: "1.0.0"
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production server
+
+tags:
+  - name: Pets
+    description: Pet management operations
+  - name: Orders
+    description: Order management operations
+  - name: Users
+    description: User management operations
+
+paths:
+  # =============================================================================
+  # PETS - Demonstrates polymorphism and discriminator
+  # =============================================================================
+  /pets:
+    get:
+      operationId: getPets
+      summary: List all pets
+      description: Returns a list of all pets, demonstrating polymorphism with discriminator
+      tags:
+        - Pets
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+        - name: type
+          in: query
+          description: Filter by pet type
+          schema:
+            type: string
+            enum: [dog, cat, bird]
+      responses:
+        "200":
+          $ref: '#/components/responses/PetListResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "500":
+          $ref: '#/components/responses/InternalErrorResponse'
+    post:
+      operationId: createPet
+      summary: Create a new pet
+      description: Creates a new pet of any supported type
+      tags:
+        - Pets
+      requestBody:
+        $ref: '#/components/requestBodies/CreatePetBody'
+      responses:
+        "201":
+          description: Pet created successfully
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestIdHeader'
+            X-Rate-Limit-Remaining:
+              $ref: '#/components/headers/RateLimitHeader'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+          links:
+            GetPetById:
+              $ref: '#/components/links/GetPetById'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+      callbacks:
+        petStatusUpdate:
+          $ref: '#/components/callbacks/PetStatusCallback'
+
+  /pets/{petId}:
+    get:
+      operationId: getPetById
+      summary: Get a pet by ID
+      tags:
+        - Pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Pet found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+
+  # =============================================================================
+  # ORDERS - Demonstrates nested composition and tuple types
+  # =============================================================================
+  /orders:
+    get:
+      operationId: getOrders
+      summary: List all orders
+      tags:
+        - Orders
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        "200":
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+    post:
+      operationId: createOrder
+      summary: Create a new order
+      tags:
+        - Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+
+  # =============================================================================
+  # USERS - Demonstrates circular references and self-referencing
+  # =============================================================================
+  /users:
+    get:
+      operationId: getUsers
+      summary: List all users
+      tags:
+        - Users
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  /users/{userId}:
+    get:
+      operationId: getUserById
+      summary: Get a user by ID
+      tags:
+        - Users
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  # =============================================================================
+  # ANALYTICS - Demonstrates Map/Dictionary pattern (additionalProperties)
+  # =============================================================================
+  /analytics/metrics:
+    get:
+      operationId: getMetrics
+      summary: Get analytics metrics
+      description: Returns metrics as a Map/Dictionary
+      responses:
+        "200":
+          description: Metrics data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsMap'
+
+  /analytics/config:
+    get:
+      operationId: getConfig
+      summary: Get configuration (strict object - no additional properties)
+      responses:
+        "200":
+          description: Configuration data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StrictConfig'
+
+components:
+  # ===========================================================================
+  # SCHEMAS
+  # ===========================================================================
+  schemas:
+    # -------------------------------------------------------------------------
+    # Polymorphism with Discriminator
+    # -------------------------------------------------------------------------
+    Pet:
+      description: A pet that can be a Dog, Cat, or Bird (polymorphic with discriminator)
+      oneOf:
+        - $ref: '#/components/schemas/Dog'
+        - $ref: '#/components/schemas/Cat'
+        - $ref: '#/components/schemas/Bird'
+      discriminator:
+        propertyName: petType
+        mapping:
+          dog: '#/components/schemas/Dog'
+          cat: '#/components/schemas/Cat'
+          bird: '#/components/schemas/Bird'
+
+    # Base schema for composition (allOf)
+    BasePet:
+      description: Base properties shared by all pets
+      type: object
+      required:
+        - id
+        - name
+        - petType
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 100
+        petType:
+          type: string
+          description: Discriminator property
+        birthDate:
+          type: string
+          format: date
+        owner:
+          $ref: '#/components/schemas/User'
+
+    Dog:
+      description: A dog pet (extends BasePet via allOf)
+      allOf:
+        - $ref: '#/components/schemas/BasePet'
+        - type: object
+          required:
+            - breed
+          properties:
+            breed:
+              type: string
+              enum: [labrador, golden_retriever, bulldog, poodle, other]
+            barkVolume:
+              type: integer
+              minimum: 1
+              maximum: 10
+            isGoodBoy:
+              type: boolean
+              default: true
+
+    Cat:
+      description: A cat pet (extends BasePet via allOf)
+      allOf:
+        - $ref: '#/components/schemas/BasePet'
+        - type: object
+          properties:
+            breed:
+              type: string
+              enum: [persian, siamese, maine_coon, british_shorthair, other]
+            meowFrequency:
+              type: integer
+              description: Meows per hour
+            livesRemaining:
+              type: integer
+              minimum: 0
+              maximum: 9
+              default: 9
+
+    Bird:
+      description: A bird pet (extends BasePet via allOf)
+      allOf:
+        - $ref: '#/components/schemas/BasePet'
+        - type: object
+          properties:
+            species:
+              type: string
+              enum: [parrot, canary, cockatiel, budgie, other]
+            canSpeak:
+              type: boolean
+              default: false
+            wingspan:
+              type: number
+              description: Wingspan in centimeters
+
+    # -------------------------------------------------------------------------
+    # Circular References and Self-Referencing
+    # -------------------------------------------------------------------------
+    User:
+      description: A user with self-referencing (manager) and mutual reference (team)
+      type: object
+      required:
+        - id
+        - email
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        # Self-referencing: User -> User
+        manager:
+          $ref: '#/components/schemas/User'
+        # Array of self-references
+        directReports:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        # Mutual reference: User -> Team, Team -> User
+        teams:
+          type: array
+          items:
+            $ref: '#/components/schemas/Team'
+        # Reference to another schema
+        profile:
+          $ref: '#/components/schemas/UserProfile'
+
+    Team:
+      description: A team with circular reference to User
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        # Circular: Team -> User -> Team
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        # Another self-reference example
+        parentTeam:
+          $ref: '#/components/schemas/Team'
+
+    UserProfile:
+      description: User profile with address
+      type: object
+      properties:
+        bio:
+          type: string
+        avatar:
+          type: string
+          format: uri
+        address:
+          $ref: '#/components/schemas/Address'
+
+    # -------------------------------------------------------------------------
+    # Nested Composition in Properties
+    # -------------------------------------------------------------------------
+    Order:
+      description: An order demonstrating nested oneOf/anyOf in properties
+      type: object
+      required:
+        - id
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, processing, shipped, delivered, cancelled]
+        # Property with nested oneOf (union type)
+        shippingAddress:
+          description: Shipping address can be US or International
+          oneOf:
+            - $ref: '#/components/schemas/USAddress'
+            - $ref: '#/components/schemas/InternationalAddress'
+        billingAddress:
+          $ref: '#/components/schemas/Address'
+        # Array items with anyOf (mixed types in array)
+        items:
+          type: array
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/PhysicalProduct'
+              - $ref: '#/components/schemas/DigitalProduct'
+        # Reference with anyOf at property level
+        paymentMethod:
+          anyOf:
+            - $ref: '#/components/schemas/CreditCard'
+            - $ref: '#/components/schemas/BankTransfer'
+            - $ref: '#/components/schemas/DigitalWallet'
+        customer:
+          $ref: '#/components/schemas/User'
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateOrderRequest:
+      description: Request body for creating an order
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        shippingAddress:
+          oneOf:
+            - $ref: '#/components/schemas/USAddress'
+            - $ref: '#/components/schemas/InternationalAddress'
+
+    OrderItem:
+      type: object
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+
+    # -------------------------------------------------------------------------
+    # Address Schemas (for composition demos)
+    # -------------------------------------------------------------------------
+    Address:
+      description: Base address schema
+      type: object
+      required:
+        - street
+        - city
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+
+    USAddress:
+      description: US-specific address
+      allOf:
+        - $ref: '#/components/schemas/Address'
+        - type: object
+          required:
+            - state
+            - zipCode
+          properties:
+            state:
+              type: string
+              minLength: 2
+              maxLength: 2
+              description: Two-letter state code
+            zipCode:
+              type: string
+              pattern: '^\d{5}(-\d{4})?$'
+
+    InternationalAddress:
+      description: International address
+      allOf:
+        - $ref: '#/components/schemas/Address'
+        - type: object
+          required:
+            - country
+          properties:
+            country:
+              type: string
+            region:
+              type: string
+
+    # -------------------------------------------------------------------------
+    # Product Schemas (for anyOf demo)
+    # -------------------------------------------------------------------------
+    PhysicalProduct:
+      type: object
+      required:
+        - id
+        - name
+        - weight
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        weight:
+          type: number
+          description: Weight in kilograms
+        dimensions:
+          $ref: '#/components/schemas/Dimensions'
+
+    DigitalProduct:
+      type: object
+      required:
+        - id
+        - name
+        - downloadUrl
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        downloadUrl:
+          type: string
+          format: uri
+        fileSizeBytes:
+          type: integer
+
+    Dimensions:
+      type: object
+      properties:
+        length:
+          type: number
+        width:
+          type: number
+        height:
+          type: number
+
+    # -------------------------------------------------------------------------
+    # Payment Method Schemas (for anyOf demo)
+    # -------------------------------------------------------------------------
+    CreditCard:
+      type: object
+      required:
+        - type
+        - lastFourDigits
+      properties:
+        type:
+          type: string
+          const: credit_card
+        lastFourDigits:
+          type: string
+          pattern: '^\d{4}$'
+        expiryMonth:
+          type: integer
+        expiryYear:
+          type: integer
+
+    BankTransfer:
+      type: object
+      required:
+        - type
+        - bankName
+      properties:
+        type:
+          type: string
+          const: bank_transfer
+        bankName:
+          type: string
+        accountLast4:
+          type: string
+
+    DigitalWallet:
+      type: object
+      required:
+        - type
+        - provider
+      properties:
+        type:
+          type: string
+          const: digital_wallet
+        provider:
+          type: string
+          enum: [apple_pay, google_pay, paypal]
+        email:
+          type: string
+          format: email
+
+    # -------------------------------------------------------------------------
+    # Map/Dictionary Pattern (additionalProperties with schema)
+    # -------------------------------------------------------------------------
+    MetricsMap:
+      description: |
+        A dictionary/map of metrics. Keys are metric names, values are MetricValue objects.
+        This demonstrates additionalProperties with a schema reference.
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/MetricValue'
+
+    MetricValue:
+      description: A single metric value with metadata
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          type: number
+        unit:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        tags:
+          $ref: '#/components/schemas/TagsMap'
+
+    TagsMap:
+      description: Key-value tags (string -> string map)
+      type: object
+      additionalProperties:
+        type: string
+
+    # -------------------------------------------------------------------------
+    # Strict Object (additionalProperties: false)
+    # -------------------------------------------------------------------------
+    StrictConfig:
+      description: Configuration object that does not allow additional properties
+      type: object
+      additionalProperties: false
+      required:
+        - version
+        - enabled
+      properties:
+        version:
+          type: string
+        enabled:
+          type: boolean
+        maxItems:
+          type: integer
+          default: 100
+
+    # -------------------------------------------------------------------------
+    # Tuple Type (prefixItems - OAS 3.1)
+    # -------------------------------------------------------------------------
+    Coordinate:
+      description: A geographic coordinate as a tuple [latitude, longitude, altitude?]
+      type: array
+      prefixItems:
+        - type: number
+          description: Latitude (-90 to 90)
+          minimum: -90
+          maximum: 90
+        - type: number
+          description: Longitude (-180 to 180)
+          minimum: -180
+          maximum: 180
+        - type: number
+          description: Altitude in meters (optional)
+      minItems: 2
+      maxItems: 3
+
+    AddressTuple:
+      description: Address as a tuple [street, city, postalCode, country]
+      type: array
+      prefixItems:
+        - type: string
+          description: Street address
+        - type: string
+          description: City
+        - $ref: '#/components/schemas/PostalCode'
+        - type: string
+          description: Country code
+
+    PostalCode:
+      type: string
+      pattern: '^[A-Z0-9]{3,10}$'
+
+    # -------------------------------------------------------------------------
+    # Negation Schema (not)
+    # -------------------------------------------------------------------------
+    NonEmptyString:
+      description: A string that is not empty
+      allOf:
+        - type: string
+        - not:
+            maxLength: 0
+
+    NotNull:
+      description: Any value that is not null
+      not:
+        type: "null"
+
+    # -------------------------------------------------------------------------
+    # Error Schemas
+    # -------------------------------------------------------------------------
+    Error:
+      description: Standard error response
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorDetail'
+
+    ErrorDetail:
+      type: object
+      properties:
+        field:
+          type: string
+        reason:
+          type: string
+
+  # ===========================================================================
+  # RESPONSES (Reusable response components)
+  # ===========================================================================
+  responses:
+    PetListResponse:
+      description: A list of pets
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Pet'
+
+    BadRequestResponse:
+      description: Bad request - validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFoundResponse:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    InternalErrorResponse:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  # ===========================================================================
+  # PARAMETERS (Reusable parameter components)
+  # ===========================================================================
+  parameters:
+    LimitParam:
+      name: limit
+      in: query
+      description: Maximum number of items to return
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+    OffsetParam:
+      name: offset
+      in: query
+      description: Number of items to skip
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+  # ===========================================================================
+  # REQUEST BODIES (Reusable request body components)
+  # ===========================================================================
+  requestBodies:
+    CreatePetBody:
+      description: Pet object to create
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Pet'
+
+  # ===========================================================================
+  # HEADERS (Reusable header components)
+  # ===========================================================================
+  headers:
+    RequestIdHeader:
+      description: Unique request identifier for tracing
+      schema:
+        type: string
+        format: uuid
+
+    RateLimitHeader:
+      description: Number of API calls remaining in the current window
+      schema:
+        type: integer
+
+  # ===========================================================================
+  # LINKS (Reusable link components for HATEOAS)
+  # ===========================================================================
+  links:
+    GetPetById:
+      operationId: getPetById
+      parameters:
+        petId: '$response.body#/id'
+      description: Get the newly created pet by its ID
+
+  # ===========================================================================
+  # CALLBACKS (Webhook components)
+  # ===========================================================================
+  callbacks:
+    PetStatusCallback:
+      '{$request.body#/callbackUrl}':
+        post:
+          summary: Pet status update webhook
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    petId:
+                      type: string
+                    newStatus:
+                      type: string
+                    timestamp:
+                      type: string
+                      format: date-time
+          responses:
+            "200":
+              description: Callback received successfully

@@ -3,7 +3,17 @@ import { Handle, Position } from '@xyflow/react';
 import type { SchemaNodeData, SchemaProperty } from '@/types';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { BoxIcon, LayersIcon, SplitIcon, MergeIcon, ListIcon } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  BoxIcon,
+  LayersIcon,
+  SplitIcon,
+  MergeIcon,
+  ListIcon,
+  TagIcon,
+  HashIcon,
+  BookOpenIcon,
+} from 'lucide-react';
 import { EDGE_COLORS } from '@/constants/colors';
 
 interface SchemaNodeProps {
@@ -12,17 +22,19 @@ interface SchemaNodeProps {
 }
 
 export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNodeProps) {
-  const { schema } = data;
+  const { schema, hasDiscriminator, discriminatorValues, compositionType, incomingRefCount, outgoingRefCount } = data;
 
   const propertyCount = schema.properties ? Object.keys(schema.properties).length : 0;
   const requiredCount = schema.required?.length || 0;
 
-  // Detect composition types
-  const hasAllOf = schema.allOf && schema.allOf.length > 0;
-  const hasOneOf = schema.oneOf && schema.oneOf.length > 0;
-  const hasAnyOf = schema.anyOf && schema.anyOf.length > 0;
+  // Detect composition types from schema or from pre-computed compositionType
+  const hasAllOf = compositionType === 'allOf' || (schema.allOf && schema.allOf.length > 0);
+  const hasOneOf = compositionType === 'oneOf' || (schema.oneOf && schema.oneOf.length > 0);
+  const hasAnyOf = compositionType === 'anyOf' || (schema.anyOf && schema.anyOf.length > 0);
   const hasItems = !!schema.items;
-  const hasComposition = hasAllOf || hasOneOf || hasAnyOf || hasItems;
+  const hasAdditionalProps = schema.additionalProperties !== undefined && schema.additionalProperties !== true;
+  const hasPrefixItems = schema.prefixItems && schema.prefixItems.length > 0;
+  const hasComposition = hasAllOf || hasOneOf || hasAnyOf || hasItems || hasAdditionalProps || hasPrefixItems;
 
   return (
     <div
@@ -40,6 +52,59 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
           {schema.name}
         </span>
       </div>
+
+      {/* Discriminator badge */}
+      {hasDiscriminator && schema.discriminator && (
+        <div className="flex items-center gap-1 px-3 pt-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge
+                className="text-[10px] text-white cursor-help"
+                style={{ backgroundColor: EDGE_COLORS.discriminator }}
+              >
+                <TagIcon className="mr-1 h-3 w-3" />
+                discriminator: {schema.discriminator.propertyName}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-xs">
+                <div className="font-medium">Polymorphic type selector</div>
+                <div className="text-muted-foreground">
+                  Property "{schema.discriminator.propertyName}" determines the schema variant
+                </div>
+                {schema.discriminator.mapping && (
+                  <div className="mt-1">
+                    <span className="text-muted-foreground">Mappings: </span>
+                    {Object.keys(schema.discriminator.mapping).join(', ')}
+                  </div>
+                )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+
+      {/* Discriminator values badge (when this schema is a target of a discriminator) */}
+      {discriminatorValues && discriminatorValues.length > 0 && (
+        <div className="flex items-center gap-1 px-3 pt-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="outline" className="text-[10px] cursor-help border-orange-400 text-orange-600">
+                <TagIcon className="mr-1 h-3 w-3" />
+                = {discriminatorValues.join(' | ')}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-xs">
+                <div className="font-medium">Discriminator target</div>
+                <div className="text-muted-foreground">
+                  This schema is selected when discriminator value is: {discriminatorValues.join(' or ')}
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
 
       {/* Composition type badges */}
       {hasComposition && (
@@ -80,6 +145,44 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
               array
             </Badge>
           )}
+          {hasAdditionalProps && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  className="text-[10px] text-white cursor-help"
+                  style={{ backgroundColor: EDGE_COLORS['additional-props'] }}
+                >
+                  <BookOpenIcon className="mr-1 h-3 w-3" />
+                  {schema.additionalProperties === false ? 'closed' : 'map'}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-xs">
+                  {schema.additionalProperties === false
+                    ? 'No additional properties allowed'
+                    : 'Map/Dictionary pattern with typed values'}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {hasPrefixItems && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  className="text-[10px] text-white cursor-help"
+                  style={{ backgroundColor: EDGE_COLORS['tuple-item'] }}
+                >
+                  <HashIcon className="mr-1 h-3 w-3" />
+                  tuple[{schema.prefixItems?.length}]
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-xs">
+                  Tuple type with {schema.prefixItems?.length} fixed positions
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
       )}
 
@@ -96,6 +199,22 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
           )}
           {requiredCount > 0 && (
             <span className="text-amber-600">({requiredCount} required)</span>
+          )}
+          {/* Reference counts */}
+          {(incomingRefCount > 0 || outgoingRefCount > 0) && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-slate-400 cursor-help">
+                  ←{incomingRefCount} →{outgoingRefCount}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-xs">
+                  <div>{incomingRefCount} incoming reference{incomingRefCount !== 1 ? 's' : ''}</div>
+                  <div>{outgoingRefCount} outgoing reference{outgoingRefCount !== 1 ? 's' : ''}</div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
           )}
         </div>
 

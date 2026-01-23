@@ -1,12 +1,18 @@
 /**
  * Graph visualization type definitions
+ *
+ * Enhanced to support:
+ * - Rich semantic edge types with context
+ * - Toggleable edge label verbosity
+ * - All relationship types from OpenAPI spec
  */
 
 import type { Node, Edge } from '@xyflow/react';
 import type { Endpoint, Schema } from './openapi';
 
 /**
- * Node types in the graph
+ * Node types in the graph.
+ * Currently focused on endpoints and schemas per user requirements.
  */
 export type GraphNodeType = 'endpoint' | 'schema';
 
@@ -26,6 +32,32 @@ export interface SchemaNodeData extends Record<string, unknown> {
   type: 'schema';
   schema: Schema;
   visible: boolean;
+
+  /**
+   * Whether this schema has a discriminator (polymorphism).
+   */
+  hasDiscriminator: boolean;
+
+  /**
+   * If this schema is a target of discriminator mappings,
+   * the values that map to it.
+   */
+  discriminatorValues?: string[];
+
+  /**
+   * If this schema uses composition, the type of composition.
+   */
+  compositionType?: 'allOf' | 'oneOf' | 'anyOf';
+
+  /**
+   * Count of incoming references to this schema.
+   */
+  incomingRefCount: number;
+
+  /**
+   * Count of outgoing references from this schema.
+   */
+  outgoingRefCount: number;
 }
 
 export type GraphNodeData = EndpointNodeData | SchemaNodeData;
@@ -36,25 +68,111 @@ export type GraphNodeData = EndpointNodeData | SchemaNodeData;
 export type GraphNode = Node<GraphNodeData>;
 
 /**
- * Edge types
+ * Edge types representing the semantic relationship between nodes.
+ *
+ * Organized by source type:
+ * - endpoint-*: Edges from endpoints
+ * - schema-*: Edges between schemas
+ * - circular: Special type for cycle visualization
  */
 export type EdgeType =
-  | 'request-body'
-  | 'response'
-  | 'parameter'
-  | 'schema-ref'
-  | 'circular'
-  | 'allOf'
-  | 'oneOf'
-  | 'anyOf'
-  | 'array-items';
+  // Endpoint -> Schema edges
+  | 'request-body'       // Request body uses schema
+  | 'response'           // Response body uses schema
+  | 'parameter'          // Parameter uses schema
+
+  // Schema -> Schema composition edges
+  | 'allOf'              // Inheritance/extension
+  | 'oneOf'              // Exclusive alternatives
+  | 'anyOf'              // Non-exclusive alternatives
+  | 'not'                // Negation
+
+  // Schema -> Schema structural edges
+  | 'property'           // Named property references schema
+  | 'additional-props'   // additionalProperties references schema
+  | 'array-items'        // Array items reference schema
+  | 'tuple-item'         // Tuple position references schema
+
+  // Schema -> Schema polymorphism edges
+  | 'discriminator'      // Discriminator mapping
+
+  // Legacy type for backward compatibility
+  | 'schema-ref'         // Generic schema reference (deprecated, use 'property')
+
+  // Special type
+  | 'circular';          // Marks edges that are part of a cycle
 
 /**
- * Extended edge data
+ * Semantic context for an edge, providing human-readable details.
+ */
+export interface EdgeSemanticContext {
+  /**
+   * For property edges: the property name.
+   */
+  propertyName?: string;
+
+  /**
+   * For response edges: the HTTP status code.
+   */
+  statusCode?: string;
+
+  /**
+   * For request/response: the media type.
+   */
+  mediaType?: string;
+
+  /**
+   * For parameter edges: the parameter name and location.
+   */
+  parameterName?: string;
+  parameterLocation?: 'query' | 'path' | 'header' | 'cookie';
+
+  /**
+   * For discriminator edges: the discriminator value.
+   */
+  discriminatorValue?: string;
+
+  /**
+   * For tuple-item edges: the position index.
+   */
+  tupleIndex?: number;
+
+  /**
+   * Whether the reference is in an array context.
+   */
+  isArray?: boolean;
+
+  /**
+   * Whether the property/parameter is required.
+   */
+  required?: boolean;
+}
+
+/**
+ * Extended edge data with semantic context.
  */
 export interface GraphEdgeData extends Record<string, unknown> {
   edgeType: EdgeType;
+
+  /**
+   * Display label (depends on verbosity mode).
+   */
   label?: string;
+
+  /**
+   * Concise label for compact mode.
+   */
+  conciseLabel?: string;
+
+  /**
+   * Verbose label with full context.
+   */
+  verboseLabel?: string;
+
+  /**
+   * Semantic context for generating labels and tooltips.
+   */
+  semanticContext?: EdgeSemanticContext;
 }
 
 export type GraphEdge = Edge<GraphEdgeData>;
@@ -67,3 +185,37 @@ export interface LayoutState {
   zoom: number;
   pan: { x: number; y: number };
 }
+
+/**
+ * Edge label verbosity mode.
+ */
+export type EdgeLabelMode = 'concise' | 'verbose';
+
+/**
+ * Configuration for graph display.
+ */
+export interface GraphDisplayConfig {
+  /**
+   * Edge label verbosity mode.
+   */
+  edgeLabelMode: EdgeLabelMode;
+
+  /**
+   * Whether to show edge labels at all.
+   */
+  showEdgeLabels: boolean;
+
+  /**
+   * Whether to animate circular edges.
+   */
+  animateCircular: boolean;
+}
+
+/**
+ * Default graph display configuration.
+ */
+export const DEFAULT_GRAPH_DISPLAY_CONFIG: GraphDisplayConfig = {
+  edgeLabelMode: 'concise',
+  showEdgeLabels: true,
+  animateCircular: true,
+};

@@ -1,11 +1,11 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { XIcon, CodeIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useGraphStore, useSpecStore, useUIStore, useEditorStore } from '@/stores';
-import type { EndpointNodeData, SchemaNodeData, GraphNodeData } from '@/types';
+import type { EndpointNodeData, SchemaNodeData, GraphNodeData, Relationship } from '@/types';
 import { EndpointDetail } from './EndpointDetail';
 import { SchemaDetail } from './SchemaDetail';
 
@@ -19,11 +19,39 @@ function isSchemaData(data: GraphNodeData): data is SchemaNodeData {
 
 export function DetailPanel() {
   const { selectedNodeId, nodes } = useGraphStore();
-  const { sourceMap } = useSpecStore();
+  const { sourceMap, parsedSpec } = useSpecStore();
   const { setDetailPanelOpen, setViewMode, viewMode } = useUIStore();
   const { selectRange } = useEditorStore();
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
+
+  // Compute relationships for the selected schema
+  const relationships = parsedSpec?.relationships;
+  const { incomingRelationships, outgoingRelationships } = useMemo(() => {
+    if (!selectedNode || !relationships) {
+      return { incomingRelationships: [], outgoingRelationships: [] };
+    }
+
+    const data = selectedNode.data as GraphNodeData;
+    if (!isSchemaData(data)) {
+      return { incomingRelationships: [], outgoingRelationships: [] };
+    }
+
+    const schemaName = data.schema.name;
+    const incoming: Relationship[] = [];
+    const outgoing: Relationship[] = [];
+
+    for (const rel of relationships) {
+      if (rel.target.componentType === 'schema' && rel.target.name === schemaName) {
+        incoming.push(rel);
+      }
+      if (rel.source.componentType === 'schema' && rel.source.name === schemaName) {
+        outgoing.push(rel);
+      }
+    }
+
+    return { incomingRelationships: incoming, outgoingRelationships: outgoing };
+  }, [selectedNode, relationships]);
 
   const handleClose = useCallback(() => {
     setDetailPanelOpen(false);
@@ -97,7 +125,13 @@ export function DetailPanel() {
       <ScrollArea className="flex-1">
         <div className="p-4">
           {isEndpointData(data) && <EndpointDetail endpoint={data.endpoint} />}
-          {isSchemaData(data) && <SchemaDetail schema={data.schema} />}
+          {isSchemaData(data) && (
+            <SchemaDetail
+              schema={data.schema}
+              incomingRelationships={incomingRelationships}
+              outgoingRelationships={outgoingRelationships}
+            />
+          )}
         </div>
       </ScrollArea>
     </div>
