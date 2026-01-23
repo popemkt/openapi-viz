@@ -1,8 +1,27 @@
-import Editor, { type Monaco, type OnMount } from '@monaco-editor/react';
+import Editor, { type Monaco, type OnMount, type BeforeMount } from '@monaco-editor/react';
 import { useCallback, useEffect, useRef } from 'react';
 import type * as monaco from 'monaco-editor';
 import { useSpecStore, useEditorStore } from '@/stores';
 import { useUIStore } from '@/stores';
+import { setupMonacoYaml } from '../monacoYamlSetup';
+
+// Configure Monaco environment to use the YAML worker
+// This must be done before Monaco loads
+window.MonacoEnvironment = {
+  getWorker(_workerId: string, label: string) {
+    if (label === 'yaml') {
+      return new Worker(
+        new URL('../yaml.worker.ts', import.meta.url),
+        { type: 'module' }
+      );
+    }
+    // Default editor worker
+    return new Worker(
+      new URL('monaco-editor/esm/vs/editor/editor.worker.js', import.meta.url),
+      { type: 'module' }
+    );
+  },
+};
 
 export function TextEditor() {
   const { rawText, setText, parseErrors } = useSpecStore();
@@ -10,6 +29,11 @@ export function TextEditor() {
   const setEditor = useEditorStore((state) => state.setEditor);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
+
+  // Configure monaco-yaml before the editor mounts
+  const handleBeforeMount: BeforeMount = useCallback((monaco) => {
+    setupMonacoYaml(monaco);
+  }, []);
 
   const handleEditorDidMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
@@ -84,6 +108,7 @@ export function TextEditor() {
         value={rawText}
         theme={getMonacoTheme()}
         onChange={handleChange}
+        beforeMount={handleBeforeMount}
         onMount={handleEditorDidMount}
         options={{
           fontSize: 13,

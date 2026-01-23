@@ -91,7 +91,8 @@ Modify `vite.config.ts` to:
 
 ---
 
-### [ ] Step: Integrate with TextEditor Component
+### [x] Step: Integrate with TextEditor Component
+<!-- chat-id: d536458f-b7ef-4bf2-b275-aad68edaee59 -->
 
 Modify `src/features/editor/components/TextEditor.tsx` to:
 - Import and configure Monaco environment for YAML worker
@@ -99,12 +100,18 @@ Modify `src/features/editor/components/TextEditor.tsx` to:
 - Ensure existing error markers continue to work
 
 **Files**:
-- `src/features/editor/components/TextEditor.tsx` (modify, ~15 lines)
-- `src/features/editor/index.ts` (modify if needed for exports)
+- `src/features/editor/components/TextEditor.tsx` (modify, ~20 lines)
+
+**Changes made**:
+- Added `MonacoEnvironment` configuration to handle YAML and editor workers
+- Imported `setupMonacoYaml` from `monacoYamlSetup.ts`
+- Added `handleBeforeMount` callback that calls `setupMonacoYaml()`
+- Added `beforeMount` prop to the Editor component
 
 **Verification**:
-- Editor loads without console errors
-- YAML worker initializes
+- `pnpm typecheck` passes ✓
+- `pnpm lint` passes ✓
+- `pnpm build` succeeds with yaml.worker bundled ✓
 
 ---
 
