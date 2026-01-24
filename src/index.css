@@ -268,3 +268,15 @@ body {
     letter-spacing: var(--tracking-normal);
   }
 }
+
+/* Monaco editor source highlighting for selected graph nodes */
+.source-highlight-selection {
+  background-color: oklch(0.5553 0.1455 48.9975 / 0.15);
+  border-left: 3px solid var(--primary);
+}
+
+/* Dark mode support for source highlighting */
+.dark .source-highlight-selection {
+  background-color: oklch(0.7049 0.1867 47.6044 / 0.2);
+  border-left-color: var(--primary);
+}
