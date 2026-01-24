@@ -1100,6 +1100,52 @@ components:
 `;
 
 /**
+ * Spec for testing allOf combined with inline properties.
+ * This pattern is common when extending a schema with additional properties.
+ */
+const allOfWithPropertiesSpec = `
+openapi: "3.0.3"
+info:
+  title: AllOf with Properties Test API
+  version: "1.0.0"
+paths:
+  /real-estate:
+    get:
+      operationId: getRealEstate
+      responses:
+        "200":
+          description: Success
+components:
+  schemas:
+    RealEstate:
+      type: object
+      properties:
+        cadastralPlots:
+          allOf:
+            - $ref: '#/components/schemas/PropertyMetadata'
+          properties:
+            value:
+              type: array
+              nullable: true
+              items:
+                $ref: '#/components/schemas/CadastralPlot'
+          description: A collection of cadastral plots
+    PropertyMetadata:
+      type: object
+      properties:
+        lastModified:
+          type: string
+          format: date-time
+    CadastralPlot:
+      type: object
+      properties:
+        id:
+          type: string
+        area:
+          type: number
+`;
+
+/**
  * Spec for testing tuple (prefixItems) relationships.
  */
 const tupleRelationshipSpec = `
@@ -1433,6 +1479,35 @@ describe('parseSpec - Relationship Collection', () => {
           r.target.name === 'NullType'
       );
       expect(notRel).toBeDefined();
+    });
+
+    it('collects refs from inline properties alongside allOf (combined schema pattern)', async () => {
+      const result = await parseSpec(allOfWithPropertiesSpec);
+
+      expect(result.spec).toBeDefined();
+      const relationships = result.spec!.relationships;
+
+      // RealEstate.cadastralPlots allOf -> PropertyMetadata
+      const allOfRel = relationships.find(
+        (r) =>
+          r.type === 'schema-allOf' &&
+          r.source.name === 'RealEstate' &&
+          r.target.name === 'PropertyMetadata' &&
+          r.context.propertyName === 'cadastralPlots'
+      );
+      expect(allOfRel).toBeDefined();
+
+      // RealEstate.cadastralPlots.value[] -> CadastralPlot
+      // This is the key test - the ref inside the inline properties of an allOf combined schema
+      const nestedArrayRel = relationships.find(
+        (r) =>
+          r.type === 'schema-array-items' &&
+          r.source.name === 'RealEstate' &&
+          r.target.name === 'CadastralPlot' &&
+          r.context.propertyName === 'cadastralPlots.value' &&
+          r.context.isArray === true
+      );
+      expect(nestedArrayRel).toBeDefined();
     });
   });
 

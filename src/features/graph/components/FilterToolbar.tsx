@@ -5,9 +5,12 @@ import {
   SearchIcon,
   BoxIcon,
   RouteIcon,
-  Minimize2Icon,
   Maximize2Icon,
+  SquareIcon,
+  MinusIcon,
   SettingsIcon,
+  EyeOffIcon,
+  HighlighterIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,20 +40,22 @@ export const FilterToolbar = memo(function FilterToolbar() {
     tagFilters,
     pathPattern,
     searchQuery,
+    filterDisplayMode,
     toggleEndpoints,
     toggleSchemas,
     toggleMethod,
     toggleTag,
     setPathPattern,
     setSearchQuery,
+    setFilterDisplayMode,
     resetFilters,
   } = useFilterStore();
 
   const { parsedSpec } = useSpecStore();
 
   const {
-    compactMode,
-    toggleCompactMode,
+    compactLevel,
+    cycleCompactLevel,
     schemaNameDisplayMode,
     setSchemaNameDisplayMode,
     endpointPathDisplayMode,
@@ -120,27 +125,51 @@ export const FilterToolbar = memo(function FilterToolbar() {
         <TooltipContent>Show Schemas</TooltipContent>
       </Tooltip>
 
-      {/* Separator */}
-      <div className="h-6 w-px bg-border" />
-
-      {/* Compact mode toggle */}
+      {/* Filter display mode toggle */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Toggle
-            pressed={compactMode}
-            onPressedChange={toggleCompactMode}
+            pressed={filterDisplayMode === 'highlight'}
+            onPressedChange={(pressed) => setFilterDisplayMode(pressed ? 'highlight' : 'hide')}
             size="sm"
-            aria-label="Toggle compact mode"
+            aria-label="Toggle filter display mode"
           >
-            {compactMode ? (
-              <Minimize2Icon className="h-4 w-4" />
+            {filterDisplayMode === 'highlight' ? (
+              <HighlighterIcon className="h-4 w-4" />
             ) : (
-              <Maximize2Icon className="h-4 w-4" />
+              <EyeOffIcon className="h-4 w-4" />
             )}
           </Toggle>
         </TooltipTrigger>
         <TooltipContent>
-          {compactMode ? 'Compact mode (click to expand)' : 'Expanded mode (click to compact)'}
+          {filterDisplayMode === 'highlight'
+            ? 'Highlight mode: dim non-matching (click to hide)'
+            : 'Hide mode: hide non-matching (click to highlight)'}
+        </TooltipContent>
+      </Tooltip>
+
+      {/* Separator */}
+      <div className="h-6 w-px bg-border" />
+
+      {/* Compact level toggle - cycles through normal/compact/minimal */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={cycleCompactLevel}
+            aria-label="Cycle compact level"
+          >
+            {compactLevel === 'normal' && <Maximize2Icon className="h-4 w-4" />}
+            {compactLevel === 'compact' && <SquareIcon className="h-4 w-4" />}
+            {compactLevel === 'minimal' && <MinusIcon className="h-4 w-4" />}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {compactLevel === 'normal' && 'Normal: Full details (click for compact)'}
+          {compactLevel === 'compact' && 'Compact: Truncated names (click for minimal)'}
+          {compactLevel === 'minimal' && 'Minimal: Headers only (click for normal)'}
         </TooltipContent>
       </Tooltip>
 

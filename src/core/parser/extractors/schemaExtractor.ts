@@ -121,6 +121,61 @@ export function extractAdditionalProperties(
 }
 
 /**
+ * Extracts nested properties from a property that has inline properties
+ * (e.g., alongside allOf in a combined schema pattern).
+ *
+ * @param properties - The nested properties object
+ * @param requiredFields - List of required field names
+ * @param lineNumber - Source line number for location tracking
+ * @param parentContext - Parent context for naming (e.g., "RealEstate.cadastralPlots")
+ */
+export function extractNestedProperties(
+  properties: Record<string, Record<string, unknown>>,
+  requiredFields: string[] = [],
+  lineNumber: number = 1,
+  parentContext?: string
+): Record<string, SchemaProperty> {
+  const result: Record<string, SchemaProperty> = {};
+  for (const [propName, prop] of Object.entries(properties)) {
+    const propertyContext = parentContext ? `${parentContext}.${propName}` : propName;
+
+    result[propName] = {
+      name: propName,
+      type: extractSchemaType(prop),
+      description: prop.description as string | undefined,
+      required: requiredFields.includes(propName),
+      format: prop.format as string | undefined,
+      enum: prop.enum as unknown[] | undefined,
+      $ref: prop.$ref as string | undefined,
+
+      // Handle array items in nested properties
+      items: prop.items
+        ? extractSchema(`${propertyContext}.items`, prop.items as Record<string, unknown>, lineNumber, {
+            isInline: true,
+            parentContext: propertyContext,
+          })
+        : undefined,
+
+      // Handle nested composition
+      allOf: extractCompositionSchemas(prop.allOf, lineNumber, 'allOf', propertyContext),
+      oneOf: extractCompositionSchemas(prop.oneOf, lineNumber, 'oneOf', propertyContext),
+      anyOf: extractCompositionSchemas(prop.anyOf, lineNumber, 'anyOf', propertyContext),
+
+      // Recursively handle deeply nested properties
+      properties: prop.properties
+        ? extractNestedProperties(
+            prop.properties as Record<string, Record<string, unknown>>,
+            (prop.required as string[]) || [],
+            lineNumber,
+            propertyContext
+          )
+        : undefined,
+    };
+  }
+  return result;
+}
+
+/**
  * Extracts schema properties with full context for nested schemas.
  *
  * @param schemaObj - The schema object containing properties
@@ -168,6 +223,24 @@ export function extractSchemaProperties(
       allOf: extractCompositionSchemas(prop.allOf, lineNumber, 'allOf', propertyContext),
       oneOf: extractCompositionSchemas(prop.oneOf, lineNumber, 'oneOf', propertyContext),
       anyOf: extractCompositionSchemas(prop.anyOf, lineNumber, 'anyOf', propertyContext),
+
+      // Handle inline properties alongside allOf (combined schema pattern)
+      // This supports patterns like:
+      // cadastralPlots:
+      //   allOf:
+      //     - $ref: '#/components/schemas/PropertyMetadata'
+      //   properties:
+      //     value:
+      //       items:
+      //         $ref: '#/components/schemas/Target'
+      properties: prop.properties
+        ? extractNestedProperties(
+            prop.properties as Record<string, Record<string, unknown>>,
+            (prop.required as string[]) || [],
+            lineNumber,
+            propertyContext
+          )
+        : undefined,
     };
   }
   return result;

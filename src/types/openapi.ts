@@ -73,6 +73,20 @@ export interface SchemaProperty {
   allOf?: Schema[];
   oneOf?: Schema[];
   anyOf?: Schema[];
+
+  /**
+   * Inline properties within a combined schema (alongside allOf/oneOf/anyOf).
+   * This supports patterns like:
+   * ```yaml
+   * propertyName:
+   *   allOf:
+   *     - $ref: '#/components/schemas/Base'
+   *   properties:
+   *     additionalField:
+   *       $ref: '#/components/schemas/Target'
+   * ```
+   */
+  properties?: Record<string, SchemaProperty>;
 }
 
 /**

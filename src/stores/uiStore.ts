@@ -4,6 +4,7 @@ import type { DisplayMode } from '../utils/displayUtils';
 
 export type ViewMode = 'editor' | 'graph' | 'split';
 export type Theme = 'light' | 'dark' | 'system';
+export type CompactLevel = 'normal' | 'compact' | 'minimal';
 
 interface UIState {
   viewMode: ViewMode;
@@ -15,7 +16,7 @@ interface UIState {
   // Graph view display settings
   schemaNameDisplayMode: DisplayMode;
   endpointPathDisplayMode: DisplayMode;
-  compactMode: boolean;
+  compactLevel: CompactLevel;
   maxNodeWidth: number;
 
   setViewMode: (mode: ViewMode) => void;
@@ -26,10 +27,12 @@ interface UIState {
   setTheme: (theme: Theme) => void;
   setSchemaNameDisplayMode: (mode: DisplayMode) => void;
   setEndpointPathDisplayMode: (mode: DisplayMode) => void;
-  setCompactMode: (compact: boolean) => void;
-  toggleCompactMode: () => void;
+  setCompactLevel: (level: CompactLevel) => void;
+  cycleCompactLevel: () => void;
   setMaxNodeWidth: (width: number) => void;
 }
+
+const COMPACT_LEVEL_ORDER: CompactLevel[] = ['normal', 'compact', 'minimal'];
 
 export const useUIStore = create<UIState>()(
   persist(
@@ -40,10 +43,10 @@ export const useUIStore = create<UIState>()(
       detailPanelHeight: 300,
       theme: 'system',
 
-      // Graph view display settings - default to short mode for compact display
+      // Graph view display settings - default to compact mode
       schemaNameDisplayMode: 'short',
       endpointPathDisplayMode: 'short',
-      compactMode: true,
+      compactLevel: 'compact',
       maxNodeWidth: 250,
 
       setViewMode: (mode) => set({ viewMode: mode }),
@@ -64,10 +67,14 @@ export const useUIStore = create<UIState>()(
       setEndpointPathDisplayMode: (mode) =>
         set({ endpointPathDisplayMode: mode }),
 
-      setCompactMode: (compact) => set({ compactMode: compact }),
+      setCompactLevel: (level) => set({ compactLevel: level }),
 
-      toggleCompactMode: () =>
-        set((state) => ({ compactMode: !state.compactMode })),
+      cycleCompactLevel: () =>
+        set((state) => {
+          const currentIndex = COMPACT_LEVEL_ORDER.indexOf(state.compactLevel);
+          const nextIndex = (currentIndex + 1) % COMPACT_LEVEL_ORDER.length;
+          return { compactLevel: COMPACT_LEVEL_ORDER[nextIndex] };
+        }),
 
       setMaxNodeWidth: (width) => set({ maxNodeWidth: width }),
     }),

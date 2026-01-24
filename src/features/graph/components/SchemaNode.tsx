@@ -24,14 +24,17 @@ interface SchemaNodeProps {
 }
 
 export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNodeProps) {
-  const { schema, hasDiscriminator, discriminatorValues, compositionType, incomingRefCount, outgoingRefCount } = data;
-  const { schemaNameDisplayMode, compactMode, maxNodeWidth } = useUIStore();
+  const { schema, hasDiscriminator, discriminatorValues, compositionType, incomingRefCount, outgoingRefCount, dimmed } = data;
+  const { schemaNameDisplayMode, compactLevel, maxNodeWidth } = useUIStore();
 
   const propertyCount = schema.properties ? Object.keys(schema.properties).length : 0;
   const requiredCount = schema.required?.length || 0;
 
+  const isCompact = compactLevel === 'compact' || compactLevel === 'minimal';
+  const isMinimal = compactLevel === 'minimal';
+
   // Get display name based on current mode
-  const displayName = compactMode
+  const displayName = isCompact
     ? truncateSchemaName(schema.name, schemaNameDisplayMode)
     : schema.name;
   const isNameTruncated = displayName !== schema.name;
@@ -48,10 +51,11 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
   return (
     <div
       className={cn(
-        'min-w-[160px] rounded-md border bg-card shadow-sm transition-shadow',
-        selected && 'ring-2 ring-primary'
+        'min-w-[160px] rounded-md border bg-card shadow-sm transition-all',
+        selected && 'ring-2 ring-primary',
+        dimmed && 'opacity-30 grayscale'
       )}
-      style={{ maxWidth: compactMode ? maxNodeWidth : undefined }}
+      style={{ maxWidth: isCompact ? maxNodeWidth : undefined }}
     >
       <Handle type="target" position={Position.Left} className="!bg-slate-500" />
 
@@ -76,8 +80,8 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
         )}
       </div>
 
-      {/* Discriminator badge */}
-      {hasDiscriminator && schema.discriminator && (
+      {/* Discriminator badge - hidden in minimal mode */}
+      {!isMinimal && hasDiscriminator && schema.discriminator && (
         <div className="flex items-center gap-1 px-3 pt-2">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -107,8 +111,8 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
         </div>
       )}
 
-      {/* Discriminator values badge (when this schema is a target of a discriminator) */}
-      {discriminatorValues && discriminatorValues.length > 0 && (
+      {/* Discriminator values badge - hidden in minimal mode */}
+      {!isMinimal && discriminatorValues && discriminatorValues.length > 0 && (
         <div className="flex items-center gap-1 px-3 pt-1">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -129,8 +133,8 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
         </div>
       )}
 
-      {/* Composition type badges */}
-      {hasComposition && (
+      {/* Composition type badges - hidden in minimal mode */}
+      {!isMinimal && hasComposition && (
         <div className="flex flex-wrap gap-1 px-3 pt-2">
           {hasAllOf && (
             <Badge
@@ -209,65 +213,67 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
         </div>
       )}
 
-      {/* Properties info */}
-      <div className="px-3 py-2">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Badge variant="outline" className="text-[10px]">
-            {schema.type}
-          </Badge>
-          {propertyCount > 0 && (
-            <span>
-              {propertyCount} prop{propertyCount !== 1 ? 's' : ''}
-            </span>
-          )}
-          {requiredCount > 0 && (
-            <span className="text-amber-600">({requiredCount} required)</span>
-          )}
-          {/* Reference counts */}
-          {(incomingRefCount > 0 || outgoingRefCount > 0) && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="text-slate-400 cursor-help">
-                  ←{incomingRefCount} →{outgoingRefCount}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="text-xs">
-                  <div>{incomingRefCount} incoming reference{incomingRefCount !== 1 ? 's' : ''}</div>
-                  <div>{outgoingRefCount} outgoing reference{outgoingRefCount !== 1 ? 's' : ''}</div>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          )}
-        </div>
-
-        {/* Show first few properties */}
-        {schema.properties && (
-          <div className="mt-2 space-y-0.5">
-            {Object.entries(schema.properties)
-              .slice(0, 3)
-              .map(([name, prop]: [string, SchemaProperty]) => (
-                <div key={name} className="flex items-center gap-1 text-[10px]">
-                  <span className={cn('font-mono', prop.required && 'font-medium')}>
-                    {name}
+      {/* Properties info - hidden in minimal mode */}
+      {!isMinimal && (
+        <div className="px-3 py-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Badge variant="outline" className="text-[10px]">
+              {schema.type}
+            </Badge>
+            {propertyCount > 0 && (
+              <span>
+                {propertyCount} prop{propertyCount !== 1 ? 's' : ''}
+              </span>
+            )}
+            {requiredCount > 0 && (
+              <span className="text-amber-600">({requiredCount} required)</span>
+            )}
+            {/* Reference counts */}
+            {(incomingRefCount > 0 || outgoingRefCount > 0) && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-slate-400 cursor-help">
+                    ←{incomingRefCount} →{outgoingRefCount}
                   </span>
-                  <span className="text-muted-foreground">: {prop.type}</span>
-                </div>
-              ))}
-            {Object.keys(schema.properties).length > 3 && (
-              <div className="text-[10px] text-muted-foreground">
-                ...{Object.keys(schema.properties).length - 3} more
-              </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="text-xs">
+                    <div>{incomingRefCount} incoming reference{incomingRefCount !== 1 ? 's' : ''}</div>
+                    <div>{outgoingRefCount} outgoing reference{outgoingRefCount !== 1 ? 's' : ''}</div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
-        )}
 
-        {schema.description && (
-          <div className="mt-2 text-[10px] text-muted-foreground line-clamp-2">
-            {schema.description}
-          </div>
-        )}
-      </div>
+          {/* Show first few properties */}
+          {schema.properties && (
+            <div className="mt-2 space-y-0.5">
+              {Object.entries(schema.properties)
+                .slice(0, 3)
+                .map(([name, prop]: [string, SchemaProperty]) => (
+                  <div key={name} className="flex items-center gap-1 text-[10px]">
+                    <span className={cn('font-mono', prop.required && 'font-medium')}>
+                      {name}
+                    </span>
+                    <span className="text-muted-foreground">: {prop.type}</span>
+                  </div>
+                ))}
+              {Object.keys(schema.properties).length > 3 && (
+                <div className="text-[10px] text-muted-foreground">
+                  ...{Object.keys(schema.properties).length - 3} more
+                </div>
+              )}
+            </div>
+          )}
+
+          {schema.description && (
+            <div className="mt-2 text-[10px] text-muted-foreground line-clamp-2">
+              {schema.description}
+            </div>
+          )}
+        </div>
+      )}
 
       <Handle type="source" position={Position.Right} className="!bg-slate-500" />
     </div>

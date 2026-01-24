@@ -23,6 +23,8 @@ export interface EndpointNodeData extends Record<string, unknown> {
   type: 'endpoint';
   endpoint: Endpoint;
   visible: boolean;
+  /** Whether the node is dimmed (shown but de-emphasized in highlight filter mode) */
+  dimmed?: boolean;
 }
 
 /**
@@ -32,6 +34,8 @@ export interface SchemaNodeData extends Record<string, unknown> {
   type: 'schema';
   schema: Schema;
   visible: boolean;
+  /** Whether the node is dimmed (shown but de-emphasized in highlight filter mode) */
+  dimmed?: boolean;
 
   /**
    * Whether this schema has a discriminator (polymorphism).
@@ -173,6 +177,9 @@ export interface GraphEdgeData extends Record<string, unknown> {
    * Semantic context for generating labels and tooltips.
    */
   semanticContext?: EdgeSemanticContext;
+
+  /** Whether the edge is dimmed (shown but de-emphasized in highlight filter mode) */
+  dimmed?: boolean;
 }
 
 export type GraphEdge = Edge<GraphEdgeData>;

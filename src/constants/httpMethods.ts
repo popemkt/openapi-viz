@@ -19,3 +19,17 @@ export const METHOD_COLORS: Record<HttpMethod, { bg: string; text: string; borde
   options: { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300' },
   head: { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300' },
 };
+
+// Hex colors for minimap (MiniMap requires actual color values, not Tailwind classes)
+export const METHOD_HEX_COLORS: Record<HttpMethod, string> = {
+  get: '#3b82f6', // blue-500
+  post: '#22c55e', // green-500
+  put: '#f59e0b', // amber-500
+  delete: '#ef4444', // red-500
+  patch: '#a855f7', // purple-500
+  options: '#6b7280', // gray-500
+  head: '#6b7280', // gray-500
+};
+
+// Schema node color for minimap
+export const SCHEMA_HEX_COLOR = '#64748b'; // slate-500

@@ -18,11 +18,13 @@ function isSchemaData(data: GraphNodeData): data is SchemaNodeData {
 }
 
 export function DetailPanel() {
-  const { selectedNodeId, nodes } = useGraphStore();
+  const { selectedNodeIds, nodes } = useGraphStore();
   const { sourceMap, parsedSpec } = useSpecStore();
   const { setDetailPanelOpen, setViewMode, viewMode } = useUIStore();
   const { selectRange } = useEditorStore();
 
+  // Get the first selected node ID for detail display
+  const selectedNodeId = selectedNodeIds.size > 0 ? Array.from(selectedNodeIds)[0] : null;
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
   // Compute relationships for the selected schema

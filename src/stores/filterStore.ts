@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { HttpMethod } from '@/types';
 
+export type FilterDisplayMode = 'hide' | 'highlight';
+
 interface FilterState {
   showEndpoints: boolean;
   showSchemas: boolean;
@@ -9,6 +11,7 @@ interface FilterState {
   tagFilters: string[];
   pathPattern: string;
   searchQuery: string;
+  filterDisplayMode: FilterDisplayMode;
 
   toggleEndpoints: () => void;
   toggleSchemas: () => void;
@@ -18,6 +21,7 @@ interface FilterState {
   toggleTag: (tag: string) => void;
   setPathPattern: (pattern: string) => void;
   setSearchQuery: (query: string) => void;
+  setFilterDisplayMode: (mode: FilterDisplayMode) => void;
   resetFilters: () => void;
 }
 
@@ -30,6 +34,7 @@ export const useFilterStore = create<FilterState>()(
       tagFilters: [],
       pathPattern: '',
       searchQuery: '',
+      filterDisplayMode: 'hide' as FilterDisplayMode,
 
       toggleEndpoints: () =>
         set((state) => ({ showEndpoints: !state.showEndpoints })),
@@ -59,6 +64,8 @@ export const useFilterStore = create<FilterState>()(
 
       setSearchQuery: (query) => set({ searchQuery: query }),
 
+      setFilterDisplayMode: (mode) => set({ filterDisplayMode: mode }),
+
       resetFilters: () =>
         set({
           showEndpoints: true,
@@ -67,6 +74,7 @@ export const useFilterStore = create<FilterState>()(
           tagFilters: [],
           pathPattern: '',
           searchQuery: '',
+          filterDisplayMode: 'hide',
         }),
     }),
     {

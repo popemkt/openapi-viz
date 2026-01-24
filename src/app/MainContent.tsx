@@ -30,14 +30,14 @@ function EditorPane() {
 
 export function MainContent() {
   const { viewMode, detailPanelOpen, setDetailPanelOpen } = useUIStore();
-  const { selectedNodeId } = useGraphStore();
+  const { selectedNodeIds } = useGraphStore();
 
   // Open detail panel when a node is selected
   useEffect(() => {
-    if (selectedNodeId) {
+    if (selectedNodeIds.size > 0) {
       setDetailPanelOpen(true);
     }
-  }, [selectedNodeId, setDetailPanelOpen]);
+  }, [selectedNodeIds, setDetailPanelOpen]);
 
   const mainContent = (() => {
     if (viewMode === 'editor') {

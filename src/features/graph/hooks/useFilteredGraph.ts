@@ -38,13 +38,14 @@ export function useFilteredGraph(
     tagFilters,
     pathPattern,
     searchQuery,
+    filterDisplayMode,
   } = useFilterStore();
 
   return useMemo(() => {
-    const visibleNodeIds = new Set<string>();
+    const matchingNodeIds = new Set<string>();
 
     const filteredNodes = nodes.map((node) => {
-      let visible = true;
+      let matchesFilter = true;
 
       if (node.type === 'endpoint') {
         const data = node.data as EndpointNodeData;
@@ -52,32 +53,32 @@ export function useFilteredGraph(
 
         // Check endpoint visibility toggle
         if (!showEndpoints) {
-          visible = false;
+          matchesFilter = false;
         }
 
         // Check method filter
-        if (visible && methodFilters.length > 0) {
+        if (matchesFilter && methodFilters.length > 0) {
           if (!methodFilters.includes(endpoint.method)) {
-            visible = false;
+            matchesFilter = false;
           }
         }
 
         // Check tag filter
-        if (visible && tagFilters.length > 0) {
+        if (matchesFilter && tagFilters.length > 0) {
           if (!endpoint.tags.some((tag) => tagFilters.includes(tag))) {
-            visible = false;
+            matchesFilter = false;
           }
         }
 
         // Check path pattern
-        if (visible && pathPattern) {
+        if (matchesFilter && pathPattern) {
           if (!matchPathPattern(endpoint.path, pathPattern)) {
-            visible = false;
+            matchesFilter = false;
           }
         }
 
         // Check search query
-        if (visible && searchQuery) {
+        if (matchesFilter && searchQuery) {
           const searchableText = [
             endpoint.path,
             endpoint.method,
@@ -88,7 +89,7 @@ export function useFilteredGraph(
           ].join(' ');
 
           if (!matchesSearch(searchableText, searchQuery)) {
-            visible = false;
+            matchesFilter = false;
           }
         }
       } else if (node.type === 'schema') {
@@ -97,11 +98,11 @@ export function useFilteredGraph(
 
         // Check schema visibility toggle
         if (!showSchemas) {
-          visible = false;
+          matchesFilter = false;
         }
 
         // Check search query
-        if (visible && searchQuery) {
+        if (matchesFilter && searchQuery) {
           const propertyNames = schema.properties
             ? Object.keys(schema.properties)
             : [];
@@ -112,28 +113,53 @@ export function useFilteredGraph(
           ].join(' ');
 
           if (!matchesSearch(searchableText, searchQuery)) {
-            visible = false;
+            matchesFilter = false;
           }
         }
       }
 
-      if (visible) {
-        visibleNodeIds.add(node.id);
+      if (matchesFilter) {
+        matchingNodeIds.add(node.id);
       }
+
+      // In highlight mode, show all nodes but dim non-matching ones
+      // In hide mode, hide non-matching nodes
+      const shouldHide = filterDisplayMode === 'hide' && !matchesFilter;
+      const shouldDim = filterDisplayMode === 'highlight' && !matchesFilter;
 
       return {
         ...node,
-        data: { ...node.data, visible },
-        hidden: !visible,
+        data: { ...node.data, visible: matchesFilter, dimmed: shouldDim },
+        hidden: shouldHide,
       };
     });
 
-    // Filter edges to only show connections between visible nodes
-    const filteredEdges = edges.map((edge) => ({
-      ...edge,
-      hidden: !visibleNodeIds.has(edge.source) || !visibleNodeIds.has(edge.target),
-    }));
+    // Filter edges based on display mode
+    // In hide mode: hide edges connecting to hidden nodes
+    // In highlight mode: dim edges connecting to dimmed nodes
+    const filteredEdges = edges.map((edge): GraphEdge => {
+      const sourceMatches = matchingNodeIds.has(edge.source);
+      const targetMatches = matchingNodeIds.has(edge.target);
+      const bothMatch = sourceMatches && targetMatches;
+      const eitherMatch = sourceMatches || targetMatches;
+
+      if (filterDisplayMode === 'hide') {
+        return {
+          ...edge,
+          hidden: !bothMatch,
+        };
+      } else {
+        // highlight mode - dim edges that don't connect two matching nodes
+        const shouldDim = !eitherMatch;
+        return {
+          ...edge,
+          hidden: false,
+          data: edge.data ? { ...edge.data, dimmed: shouldDim } : undefined,
+          style: shouldDim ? { ...edge.style, opacity: 0.2 } : edge.style,
+        };
+      }
+    });
 
     return { filteredNodes, filteredEdges };
-  }, [nodes, edges, showEndpoints, showSchemas, methodFilters, tagFilters, pathPattern, searchQuery]);
+  }, [nodes, edges, showEndpoints, showSchemas, methodFilters, tagFilters, pathPattern, searchQuery, filterDisplayMode]);
 }

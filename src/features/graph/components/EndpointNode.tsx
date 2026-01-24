@@ -14,12 +14,15 @@ interface EndpointNodeProps {
 }
 
 export const EndpointNode = memo(function EndpointNode({ data, selected }: EndpointNodeProps) {
-  const { endpoint } = data;
+  const { endpoint, dimmed } = data;
   const methodColor = METHOD_COLORS[endpoint.method as HttpMethod];
-  const { endpointPathDisplayMode, compactMode, maxNodeWidth } = useUIStore();
+  const { endpointPathDisplayMode, compactLevel, maxNodeWidth } = useUIStore();
+
+  const isCompact = compactLevel === 'compact' || compactLevel === 'minimal';
+  const isMinimal = compactLevel === 'minimal';
 
   // Get display path based on current mode
-  const displayPath = compactMode
+  const displayPath = isCompact
     ? truncateEndpointPath(endpoint.path, endpointPathDisplayMode)
     : endpoint.path;
   const isPathTruncated = displayPath !== endpoint.path;
@@ -27,11 +30,12 @@ export const EndpointNode = memo(function EndpointNode({ data, selected }: Endpo
   return (
     <div
       className={cn(
-        'min-w-[180px] rounded-md border bg-card shadow-sm transition-shadow',
+        'min-w-[180px] rounded-md border bg-card shadow-sm transition-all',
         selected && 'ring-2 ring-primary',
-        endpoint.deprecated && 'opacity-60'
+        endpoint.deprecated && 'opacity-60',
+        dimmed && 'opacity-30 grayscale'
       )}
-      style={{ maxWidth: compactMode ? maxNodeWidth : undefined }}
+      style={{ maxWidth: isCompact ? maxNodeWidth : undefined }}
     >
       <Handle type="target" position={Position.Left} className="!bg-primary" />
 
@@ -40,6 +44,25 @@ export const EndpointNode = memo(function EndpointNode({ data, selected }: Endpo
         <Badge variant="outline" className={cn('uppercase font-mono text-xs', methodColor.text, methodColor.border)}>
           {endpoint.method}
         </Badge>
+        {/* In minimal mode, show truncated path in header */}
+        {isMinimal && (
+          isPathTruncated ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="font-mono text-xs text-foreground truncate cursor-help flex-1 min-w-0">
+                  {displayPath}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-[400px]">
+                <span className="font-mono text-xs break-all">{endpoint.path}</span>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <span className="font-mono text-xs text-foreground truncate flex-1 min-w-0">
+              {displayPath}
+            </span>
+          )
+        )}
         {endpoint.deprecated && (
           <Badge variant="secondary" className="text-xs">
             deprecated
@@ -47,38 +70,40 @@ export const EndpointNode = memo(function EndpointNode({ data, selected }: Endpo
         )}
       </div>
 
-      {/* Path and summary */}
-      <div className="px-3 py-2">
-        {isPathTruncated ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="font-mono text-xs text-foreground truncate cursor-help">{displayPath}</div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-[400px]">
-              <span className="font-mono text-xs break-all">{endpoint.path}</span>
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          <div className="font-mono text-xs text-foreground break-all">{endpoint.path}</div>
-        )}
-        {endpoint.summary && (
-          <div className="mt-1 text-xs text-muted-foreground line-clamp-2">{endpoint.summary}</div>
-        )}
-        {endpoint.tags.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {endpoint.tags.slice(0, 2).map((tag: string) => (
-              <Badge key={tag} variant="secondary" className="text-[10px]">
-                {tag}
-              </Badge>
-            ))}
-            {endpoint.tags.length > 2 && (
-              <Badge variant="secondary" className="text-[10px]">
-                +{endpoint.tags.length - 2}
-              </Badge>
-            )}
-          </div>
-        )}
-      </div>
+      {/* Path and summary - hidden in minimal mode */}
+      {!isMinimal && (
+        <div className="px-3 py-2">
+          {isPathTruncated ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="font-mono text-xs text-foreground truncate cursor-help">{displayPath}</div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-[400px]">
+                <span className="font-mono text-xs break-all">{endpoint.path}</span>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <div className="font-mono text-xs text-foreground break-all">{endpoint.path}</div>
+          )}
+          {endpoint.summary && (
+            <div className="mt-1 text-xs text-muted-foreground line-clamp-2">{endpoint.summary}</div>
+          )}
+          {endpoint.tags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {endpoint.tags.slice(0, 2).map((tag: string) => (
+                <Badge key={tag} variant="secondary" className="text-[10px]">
+                  {tag}
+                </Badge>
+              ))}
+              {endpoint.tags.length > 2 && (
+                <Badge variant="secondary" className="text-[10px]">
+                  +{endpoint.tags.length - 2}
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <Handle type="source" position={Position.Right} className="!bg-primary" />
     </div>

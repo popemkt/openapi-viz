@@ -111,6 +111,60 @@ export function collectSchemaRelationships(schema: Schema, relationships: Relati
         collectCompositionRelationships(schema.name, prop.allOf, 'schema-allOf', relationships, propName);
       }
 
+      // Handle inline properties alongside allOf (combined schema pattern)
+      // This handles patterns like:
+      //   propertyName:
+      //     allOf:
+      //       - $ref: '#/components/schemas/Metadata'
+      //     properties:
+      //       value:
+      //         items:
+      //           $ref: '#/components/schemas/Target'
+      if (prop.properties) {
+        for (const [nestedPropName, nestedProp] of Object.entries(prop.properties)) {
+          // Direct $ref on nested property
+          if (nestedProp.$ref) {
+            const targetName = extractSchemaRefName(nestedProp.$ref);
+            if (targetName) {
+              const context: RelationshipContext = {
+                propertyName: `${propName}.${nestedPropName}`,
+                required: nestedProp.required,
+              };
+              relationships.push(createRelationship('schema-property', sourceRef, createSchemaRef(targetName), context));
+            }
+          }
+
+          // Array items in nested property
+          if (nestedProp.items?.$ref) {
+            const targetName = extractSchemaRefName(nestedProp.items.$ref);
+            if (targetName) {
+              const context: RelationshipContext = {
+                propertyName: `${propName}.${nestedPropName}`,
+                isArray: true,
+                required: nestedProp.required,
+              };
+              relationships.push(createRelationship('schema-array-items', sourceRef, createSchemaRef(targetName), context));
+            }
+          }
+
+          // Nested composition in nested properties
+          if (nestedProp.oneOf) {
+            collectCompositionRelationships(schema.name, nestedProp.oneOf, 'schema-oneOf', relationships, `${propName}.${nestedPropName}`);
+          }
+          if (nestedProp.anyOf) {
+            collectCompositionRelationships(schema.name, nestedProp.anyOf, 'schema-anyOf', relationships, `${propName}.${nestedPropName}`);
+          }
+          if (nestedProp.allOf) {
+            collectCompositionRelationships(schema.name, nestedProp.allOf, 'schema-allOf', relationships, `${propName}.${nestedPropName}`);
+          }
+
+          // Recursively collect from nested items schema
+          if (nestedProp.items && !nestedProp.items.$ref) {
+            collectSchemaRelationships(nestedProp.items, relationships);
+          }
+        }
+      }
+
       // Recursively collect from nested items schema
       if (prop.items && !prop.items.$ref) {
         collectSchemaRelationships(prop.items, relationships);
@@ -272,6 +326,30 @@ export function extractComponentSchemaRefs(schema: Schema, refs: Set<string> = n
             if (sub.$ref) {
               const refName = extractSchemaRefName(sub.$ref);
               if (refName) refs.add(refName);
+            }
+          }
+        }
+      }
+      // Handle inline properties alongside allOf (combined schema pattern)
+      if (prop.properties) {
+        for (const nestedProp of Object.values(prop.properties)) {
+          if (nestedProp.$ref) {
+            const refName = extractSchemaRefName(nestedProp.$ref);
+            if (refName) refs.add(refName);
+          }
+          if (nestedProp.items?.$ref) {
+            const refName = extractSchemaRefName(nestedProp.items.$ref);
+            if (refName) refs.add(refName);
+          }
+          // Nested composition in nested properties
+          for (const compositionSchemas of [nestedProp.allOf, nestedProp.oneOf, nestedProp.anyOf]) {
+            if (compositionSchemas) {
+              for (const sub of compositionSchemas) {
+                if (sub.$ref) {
+                  const refName = extractSchemaRefName(sub.$ref);
+                  if (refName) refs.add(refName);
+                }
+              }
             }
           }
         }

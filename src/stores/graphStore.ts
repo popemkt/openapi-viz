@@ -5,12 +5,13 @@ interface GraphState {
   nodes: GraphNode[];
   edges: GraphEdge[];
   layout: LayoutState;
-  selectedNodeId: string | null;
+  selectedNodeIds: Set<string>;
   hoveredNodeId: string | null;
 
   setNodes: (nodes: GraphNode[]) => void;
   setEdges: (edges: GraphEdge[]) => void;
-  selectNode: (id: string | null) => void;
+  /** Select a node. If additive is true, adds to selection; otherwise replaces. Pass null to clear selection. */
+  selectNode: (id: string | null, additive?: boolean) => void;
   hoverNode: (id: string | null) => void;
   updateNodePosition: (id: string, position: { x: number; y: number }) => void;
   setLayout: (layout: Partial<LayoutState>) => void;
@@ -27,14 +28,32 @@ export const useGraphStore = create<GraphState>((set) => ({
   nodes: [],
   edges: [],
   layout: initialLayout,
-  selectedNodeId: null,
+  selectedNodeIds: new Set<string>(),
   hoveredNodeId: null,
 
   setNodes: (nodes) => set({ nodes }),
 
   setEdges: (edges) => set({ edges }),
 
-  selectNode: (id) => set({ selectedNodeId: id }),
+  selectNode: (id, additive = false) =>
+    set((state) => {
+      if (id === null) {
+        // Clear selection
+        return { selectedNodeIds: new Set<string>() };
+      }
+      if (additive) {
+        // Toggle selection: add if not present, remove if present
+        const newSet = new Set(state.selectedNodeIds);
+        if (newSet.has(id)) {
+          newSet.delete(id);
+        } else {
+          newSet.add(id);
+        }
+        return { selectedNodeIds: newSet };
+      }
+      // Replace selection with single node
+      return { selectedNodeIds: new Set([id]) };
+    }),
 
   hoverNode: (id) => set({ hoveredNodeId: id }),
 
@@ -59,7 +78,7 @@ export const useGraphStore = create<GraphState>((set) => ({
       nodes: [],
       edges: [],
       layout: initialLayout,
-      selectedNodeId: null,
+      selectedNodeIds: new Set<string>(),
       hoveredNodeId: null,
     }),
 }));
