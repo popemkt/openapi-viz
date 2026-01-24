@@ -33,7 +33,8 @@ Do not make assumptions on important decisions — get clarification first.
 
 ---
 
-### [ ] Step: Create Segmented Control Component
+### [x] Step: Create Segmented Control Component
+<!-- chat-id: 461c38bf-3186-417c-a4c6-3a63cd2b9207 -->
 
 Create a reusable segmented control component as an alternative to icon-only toggles.
 
@@ -50,6 +51,16 @@ Create a reusable segmented control component as an alternative to icon-only tog
 **Verification:**
 - Component builds without errors
 - Component can be imported and used in FilterToolbar
+
+**Completed**: Created `src/components/ui/segmented-control.tsx` with:
+- Generic TypeScript support for type-safe option values
+- CVA-based variants consistent with existing button/toggle patterns
+- Uses Radix UI ToggleGroup primitive for accessibility
+- Supports icon + label combinations with `iconOnly` prop
+- Three sizes (sm, default, lg)
+- Clear active/inactive visual states with subtle shadow on active
+- Prevents deselection (always requires a selected value)
+- Verified: TypeScript compiles, lint passes
 
 ---
 
