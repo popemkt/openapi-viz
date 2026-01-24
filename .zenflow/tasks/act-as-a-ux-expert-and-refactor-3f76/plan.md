@@ -64,7 +64,8 @@ Create a reusable segmented control component as an alternative to icon-only tog
 
 ---
 
-### [ ] Step: Refactor FilterToolbar Layout
+### [x] Step: Refactor FilterToolbar Layout
+<!-- chat-id: 110f8cf3-6d25-403e-afc5-d6d134d93383 -->
 
 Restructure the FilterToolbar from a flat horizontal layout to organized sections.
 
@@ -87,6 +88,22 @@ Restructure the FilterToolbar from a flat horizontal layout to organized section
 - All existing filter functionality works
 - Controls are labeled and understandable without tooltips
 - Visual grouping is clear
+
+**Completed**: Refactored `src/features/graph/components/FilterToolbar.tsx` with:
+- **Section 1 (Search & Path Filter)**: Search input with wider min-width + Path pattern with "Path:" label
+- **Section 2 (Node Visibility & Filter Mode)**:
+  - Replaced icon-only toggles with labeled SegmentedControl for node visibility (All/Endpoints/Schemas)
+  - Replaced filter mode toggle with labeled SegmentedControl (Highlight/Hide)
+  - Added "Show:" and "Filter:" labels for clarity
+- **Section 3 (View & Layout Settings)**:
+  - Combined compact level cycle button + display settings into single "View" dropdown with SegmentedControl for detail level
+  - Added labels to "View" and "Layout" dropdown buttons
+  - Simplified spacing presets in Layout dropdown (removed parenthetical numbers)
+- **Section 4 (HTTP Methods & Tags)**: Kept existing dropdowns with clear labels
+- Removed duplicate hidden nodes indicator (now only in BulkActionsToolbar)
+- Replaced badge+X button filter indicator with simpler "Clear (N)" ghost button
+- Added `setShowEndpoints` and `setShowSchemas` functions to filterStore
+- Verified: Build and lint pass
 
 ---
 

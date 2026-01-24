@@ -15,6 +15,8 @@ interface FilterState {
 
   toggleEndpoints: () => void;
   toggleSchemas: () => void;
+  setShowEndpoints: (show: boolean) => void;
+  setShowSchemas: (show: boolean) => void;
   setMethodFilters: (methods: HttpMethod[]) => void;
   toggleMethod: (method: HttpMethod) => void;
   setTagFilters: (tags: string[]) => void;
@@ -41,6 +43,10 @@ export const useFilterStore = create<FilterState>()(
 
       toggleSchemas: () =>
         set((state) => ({ showSchemas: !state.showSchemas })),
+
+      setShowEndpoints: (show) => set({ showEndpoints: show }),
+
+      setShowSchemas: (show) => set({ showSchemas: show }),
 
       setMethodFilters: (methods) => set({ methodFilters: methods }),
 
