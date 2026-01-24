@@ -16,7 +16,7 @@ interface EndpointNodeProps {
 export const EndpointNode = memo(function EndpointNode({ data, selected }: EndpointNodeProps) {
   const { endpoint, dimmed } = data;
   const methodColor = METHOD_COLORS[endpoint.method as HttpMethod];
-  const { endpointPathDisplayMode, compactLevel, maxNodeWidth } = useUIStore();
+  const { endpointPathDisplayMode, compactLevel, maxNodeWidth, nodeScale } = useUIStore();
 
   const isCompact = compactLevel === 'compact' || compactLevel === 'minimal';
   const isMinimal = compactLevel === 'minimal';
@@ -27,15 +27,23 @@ export const EndpointNode = memo(function EndpointNode({ data, selected }: Endpo
     : endpoint.path;
   const isPathTruncated = displayPath !== endpoint.path;
 
+  // Calculate scaled dimensions
+  const scaledMinWidth = 180 * nodeScale;
+  const scaledMaxWidth = isCompact ? maxNodeWidth * nodeScale : undefined;
+
   return (
     <div
       className={cn(
-        'min-w-[180px] rounded-md border bg-card shadow-sm transition-all',
+        'rounded-md border bg-card shadow-sm transition-all origin-top-left',
         selected && 'ring-2 ring-primary',
         endpoint.deprecated && 'opacity-60',
         dimmed && 'opacity-30 grayscale'
       )}
-      style={{ maxWidth: isCompact ? maxNodeWidth : undefined }}
+      style={{
+        minWidth: scaledMinWidth,
+        maxWidth: scaledMaxWidth,
+        fontSize: `${nodeScale}rem`,
+      }}
     >
       <Handle type="target" position={Position.Left} className="!bg-primary" />
 

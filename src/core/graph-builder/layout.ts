@@ -9,7 +9,7 @@ import dagre from 'dagre';
 import type { GraphNode, GraphEdge } from '@/types';
 
 export interface LayoutOptions {
-  direction: 'LR' | 'TB';
+  direction: 'LR' | 'TB' | 'RL' | 'BT';
   nodeWidth: number;
   nodeHeight: number;
   rankSpacing: number;

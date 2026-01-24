@@ -12,6 +12,12 @@ import {
   EyeOffIcon,
   HighlighterIcon,
   EyeIcon,
+  MousePointer2Icon,
+  ArrowRightIcon,
+  ArrowDownIcon,
+  ArrowLeftIcon,
+  ArrowUpIcon,
+  LayoutGridIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,9 +35,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useFilterStore, useSpecStore, useUIStore, useGraphStore } from '@/stores';
+import { useMatchingNodeIds } from '../hooks/useFilteredGraph';
 import { HTTP_METHODS, METHOD_COLORS } from '@/constants';
 import { cn } from '@/lib/utils';
 import type { DisplayMode } from '@/utils/displayUtils';
+import type { LayoutDirection } from '@/stores/uiStore';
 
 export const FilterToolbar = memo(function FilterToolbar() {
   const {
@@ -61,10 +69,21 @@ export const FilterToolbar = memo(function FilterToolbar() {
     setSchemaNameDisplayMode,
     endpointPathDisplayMode,
     setEndpointPathDisplayMode,
+    layoutDirection,
+    setLayoutDirection,
+    rankSpacing,
+    setRankSpacing,
+    nodeSpacing,
+    setNodeSpacing,
+    nodeScale,
+    setNodeScale,
   } = useUIStore();
 
-  const { hiddenNodeIds, showAllHiddenNodes } = useGraphStore();
+  const { hiddenNodeIds, showAllHiddenNodes, setSelectedNodeIds, relayoutVisibleNodes } = useGraphStore();
   const hiddenCount = hiddenNodeIds.size;
+
+  // Get matching (highlighted) node IDs for "Select Highlighted" feature
+  const matchingNodeIds = useMatchingNodeIds();
 
   const availableTags = parsedSpec?.tags.map((t) => t.name) || [];
   const activeFilterCount =
@@ -74,6 +93,35 @@ export const FilterToolbar = memo(function FilterToolbar() {
     (searchQuery ? 1 : 0) +
     (!showEndpoints ? 1 : 0) +
     (!showSchemas ? 1 : 0);
+
+  // Show "Select Highlighted" button when in highlight mode with active filters
+  const showSelectHighlighted = filterDisplayMode === 'highlight' && activeFilterCount > 0;
+
+  const handleSelectHighlighted = () => {
+    setSelectedNodeIds(matchingNodeIds);
+  };
+
+  const handleApplyLayout = () => {
+    relayoutVisibleNodes({
+      direction: layoutDirection,
+      rankSpacing,
+      nodeSpacing,
+    });
+  };
+
+  const directionIcons: Record<LayoutDirection, React.ReactNode> = {
+    LR: <ArrowRightIcon className="h-4 w-4" />,
+    TB: <ArrowDownIcon className="h-4 w-4" />,
+    RL: <ArrowLeftIcon className="h-4 w-4" />,
+    BT: <ArrowUpIcon className="h-4 w-4" />,
+  };
+
+  const directionLabels: Record<LayoutDirection, string> = {
+    LR: 'Left to Right',
+    TB: 'Top to Bottom',
+    RL: 'Right to Left',
+    BT: 'Bottom to Top',
+  };
 
   return (
     <div className="flex items-center gap-2 border-b border-border bg-card/50 px-3 py-2">
@@ -152,6 +200,28 @@ export const FilterToolbar = memo(function FilterToolbar() {
         </TooltipContent>
       </Tooltip>
 
+      {/* Select Highlighted button - visible in highlight mode with active filters */}
+      {showSelectHighlighted && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1"
+              onClick={handleSelectHighlighted}
+            >
+              <MousePointer2Icon className="h-4 w-4" />
+              <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                {matchingNodeIds.size}
+              </Badge>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            Select {matchingNodeIds.size} highlighted node{matchingNodeIds.size !== 1 ? 's' : ''}
+          </TooltipContent>
+        </Tooltip>
+      )}
+
       {/* Separator */}
       <div className="h-6 w-px bg-border" />
 
@@ -209,6 +279,70 @@ export const FilterToolbar = memo(function FilterToolbar() {
             <DropdownMenuRadioItem value="medium">Medium (last 2 segments)</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="short">Short (last segment only)</DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-xs">Node Size</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={String(nodeScale)}
+            onValueChange={(value) => setNodeScale(Number(value))}
+          >
+            <DropdownMenuRadioItem value="0.75">Small (75%)</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="1">Normal (100%)</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="1.25">Large (125%)</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="1.5">Extra Large (150%)</DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Layout settings dropdown */}
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                <LayoutGridIcon className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Layout settings</TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuLabel className="text-xs">Layout Direction</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={layoutDirection}
+            onValueChange={(value) => setLayoutDirection(value as LayoutDirection)}
+          >
+            {(['LR', 'TB', 'RL', 'BT'] as LayoutDirection[]).map((dir) => (
+              <DropdownMenuRadioItem key={dir} value={dir} className="gap-2">
+                {directionIcons[dir]}
+                <span>{directionLabels[dir]}</span>
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-xs">Spacing Preset</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={`${rankSpacing}-${nodeSpacing}`}
+            onValueChange={(value) => {
+              const [rank, node] = value.split('-').map(Number);
+              setRankSpacing(rank);
+              setNodeSpacing(node);
+            }}
+          >
+            <DropdownMenuRadioItem value="50-20">Compact (50/20)</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="100-50">Normal (100/50)</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="150-80">Spacious (150/80)</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="200-100">Wide (200/100)</DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+          <DropdownMenuSeparator />
+          <div className="p-2">
+            <Button
+              size="sm"
+              className="w-full"
+              onClick={handleApplyLayout}
+            >
+              Apply Layout
+            </Button>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
 

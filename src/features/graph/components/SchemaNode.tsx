@@ -25,7 +25,7 @@ interface SchemaNodeProps {
 
 export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNodeProps) {
   const { schema, hasDiscriminator, discriminatorValues, compositionType, incomingRefCount, outgoingRefCount, dimmed } = data;
-  const { schemaNameDisplayMode, compactLevel, maxNodeWidth } = useUIStore();
+  const { schemaNameDisplayMode, compactLevel, maxNodeWidth, nodeScale } = useUIStore();
 
   const propertyCount = schema.properties ? Object.keys(schema.properties).length : 0;
   const requiredCount = schema.required?.length || 0;
@@ -48,14 +48,22 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
   const hasPrefixItems = schema.prefixItems && schema.prefixItems.length > 0;
   const hasComposition = hasAllOf || hasOneOf || hasAnyOf || hasItems || hasAdditionalProps || hasPrefixItems;
 
+  // Calculate scaled dimensions
+  const scaledMinWidth = 160 * nodeScale;
+  const scaledMaxWidth = isCompact ? maxNodeWidth * nodeScale : undefined;
+
   return (
     <div
       className={cn(
-        'min-w-[160px] rounded-md border bg-card shadow-sm transition-all',
+        'rounded-md border bg-card shadow-sm transition-all origin-top-left',
         selected && 'ring-2 ring-primary',
         dimmed && 'opacity-30 grayscale'
       )}
-      style={{ maxWidth: isCompact ? maxNodeWidth : undefined }}
+      style={{
+        minWidth: scaledMinWidth,
+        maxWidth: scaledMaxWidth,
+        fontSize: `${nodeScale}rem`,
+      }}
     >
       <Handle type="target" position={Position.Left} className="!bg-slate-500" />
 

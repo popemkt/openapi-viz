@@ -5,6 +5,7 @@ import type { DisplayMode } from '../utils/displayUtils';
 export type ViewMode = 'editor' | 'graph' | 'split';
 export type Theme = 'light' | 'dark' | 'system';
 export type CompactLevel = 'normal' | 'compact' | 'minimal';
+export type LayoutDirection = 'LR' | 'TB' | 'RL' | 'BT';
 
 interface UIState {
   viewMode: ViewMode;
@@ -19,6 +20,14 @@ interface UIState {
   compactLevel: CompactLevel;
   maxNodeWidth: number;
 
+  // Layout settings
+  layoutDirection: LayoutDirection;
+  rankSpacing: number;
+  nodeSpacing: number;
+
+  // Node scale setting
+  nodeScale: number;
+
   setViewMode: (mode: ViewMode) => void;
   setSplitPosition: (position: number) => void;
   toggleDetailPanel: () => void;
@@ -30,6 +39,10 @@ interface UIState {
   setCompactLevel: (level: CompactLevel) => void;
   cycleCompactLevel: () => void;
   setMaxNodeWidth: (width: number) => void;
+  setLayoutDirection: (direction: LayoutDirection) => void;
+  setRankSpacing: (spacing: number) => void;
+  setNodeSpacing: (spacing: number) => void;
+  setNodeScale: (scale: number) => void;
 }
 
 const COMPACT_LEVEL_ORDER: CompactLevel[] = ['normal', 'compact', 'minimal'];
@@ -48,6 +61,14 @@ export const useUIStore = create<UIState>()(
       endpointPathDisplayMode: 'short',
       compactLevel: 'compact',
       maxNodeWidth: 250,
+
+      // Layout settings - defaults match Dagre defaults
+      layoutDirection: 'LR',
+      rankSpacing: 100,
+      nodeSpacing: 50,
+
+      // Node scale - default is 1.0 (100%)
+      nodeScale: 1,
 
       setViewMode: (mode) => set({ viewMode: mode }),
 
@@ -77,6 +98,14 @@ export const useUIStore = create<UIState>()(
         }),
 
       setMaxNodeWidth: (width) => set({ maxNodeWidth: width }),
+
+      setLayoutDirection: (direction) => set({ layoutDirection: direction }),
+
+      setRankSpacing: (spacing) => set({ rankSpacing: spacing }),
+
+      setNodeSpacing: (spacing) => set({ nodeSpacing: spacing }),
+
+      setNodeScale: (scale) => set({ nodeScale: scale }),
     }),
     {
       name: 'openapi-viz-ui',

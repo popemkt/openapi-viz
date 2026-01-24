@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { GraphNode, GraphEdge, LayoutState } from '@/types';
-import { applyDagreLayout } from '@/core/graph-builder/layout';
+import { applyDagreLayout, type LayoutOptions } from '@/core/graph-builder/layout';
 
 interface GraphState {
   nodes: GraphNode[];
@@ -45,7 +45,7 @@ interface GraphState {
   /** Toggle auto-layout mode */
   setAutoLayout: (enabled: boolean) => void;
   /** Relayout visible nodes using Dagre algorithm */
-  relayoutVisibleNodes: () => void;
+  relayoutVisibleNodes: (options?: Partial<LayoutOptions>) => void;
   reset: () => void;
 }
 
@@ -235,7 +235,7 @@ export const useGraphStore = create<GraphState>((set) => ({
 
   setAutoLayout: (enabled) => set({ isAutoLayoutEnabled: enabled }),
 
-  relayoutVisibleNodes: () =>
+  relayoutVisibleNodes: (options?: Partial<LayoutOptions>) =>
     set((state) => {
       // Get only visible (non-hidden) nodes
       const visibleNodes = state.nodes.filter(
@@ -248,8 +248,8 @@ export const useGraphStore = create<GraphState>((set) => ({
         (edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)
       );
 
-      // Apply Dagre layout to visible nodes
-      const layoutedVisibleNodes = applyDagreLayout(visibleNodes, visibleEdges);
+      // Apply Dagre layout to visible nodes with optional custom settings
+      const layoutedVisibleNodes = applyDagreLayout(visibleNodes, visibleEdges, options);
 
       // Create a map of new positions
       const newPositions: Record<string, { x: number; y: number }> = {};

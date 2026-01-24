@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useFilterStore, useGraphStore } from '@/stores';
-import type { GraphNode, GraphEdge, EndpointNodeData, SchemaNodeData } from '@/types';
+import type { GraphNode, GraphEdge, EndpointNodeData, SchemaNodeData, HttpMethod } from '@/types';
 
 function matchPathPattern(path: string, pattern: string): boolean {
   if (!pattern) return true;
@@ -27,6 +27,111 @@ function matchesSearch(text: string, query: string): boolean {
   return text.toLowerCase().includes(query.toLowerCase());
 }
 
+/**
+ * Check if a node matches the current filter criteria.
+ * This is extracted for reuse in useMatchingNodeIds hook.
+ */
+export function nodeMatchesFilters(
+  node: GraphNode,
+  filters: {
+    showEndpoints: boolean;
+    showSchemas: boolean;
+    methodFilters: HttpMethod[];
+    tagFilters: string[];
+    pathPattern: string;
+    searchQuery: string;
+  }
+): boolean {
+  const { showEndpoints, showSchemas, methodFilters, tagFilters, pathPattern, searchQuery } = filters;
+
+  if (node.type === 'endpoint') {
+    const data = node.data as EndpointNodeData;
+    const endpoint = data.endpoint;
+
+    // Check endpoint visibility toggle
+    if (!showEndpoints) return false;
+
+    // Check method filter
+    if (methodFilters.length > 0 && !methodFilters.includes(endpoint.method)) {
+      return false;
+    }
+
+    // Check tag filter
+    if (tagFilters.length > 0 && !endpoint.tags.some((tag) => tagFilters.includes(tag))) {
+      return false;
+    }
+
+    // Check path pattern
+    if (pathPattern && !matchPathPattern(endpoint.path, pathPattern)) {
+      return false;
+    }
+
+    // Check search query
+    if (searchQuery) {
+      const searchableText = [
+        endpoint.path,
+        endpoint.method,
+        endpoint.summary || '',
+        endpoint.description || '',
+        endpoint.operationId || '',
+        ...endpoint.tags,
+      ].join(' ');
+
+      if (!matchesSearch(searchableText, searchQuery)) {
+        return false;
+      }
+    }
+
+    return true;
+  } else if (node.type === 'schema') {
+    const data = node.data as SchemaNodeData;
+    const schema = data.schema;
+
+    // Check schema visibility toggle
+    if (!showSchemas) return false;
+
+    // Check search query
+    if (searchQuery) {
+      const propertyNames = schema.properties ? Object.keys(schema.properties) : [];
+      const searchableText = [schema.name, schema.description || '', ...propertyNames].join(' ');
+
+      if (!matchesSearch(searchableText, searchQuery)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  return true;
+}
+
+/**
+ * Hook to get the IDs of nodes that match the current filter criteria.
+ * Useful for "Select Highlighted" functionality.
+ */
+export function useMatchingNodeIds(): Set<string> {
+  const { showEndpoints, showSchemas, methodFilters, tagFilters, pathPattern, searchQuery } =
+    useFilterStore();
+  const { nodes, hiddenNodeIds } = useGraphStore();
+
+  return useMemo(() => {
+    const matchingIds = new Set<string>();
+    const filters = { showEndpoints, showSchemas, methodFilters, tagFilters, pathPattern, searchQuery };
+
+    for (const node of nodes) {
+      // Skip manually hidden nodes
+      if (hiddenNodeIds.has(node.id)) continue;
+
+      if (nodeMatchesFilters(node, filters)) {
+        matchingIds.add(node.id);
+      }
+    }
+
+    return matchingIds;
+  }, [nodes, hiddenNodeIds, showEndpoints, showSchemas, methodFilters, tagFilters, pathPattern, searchQuery]);
+}
+
 export function useFilteredGraph(
   nodes: GraphNode[],
   edges: GraphEdge[]
@@ -45,6 +150,7 @@ export function useFilteredGraph(
 
   return useMemo(() => {
     const matchingNodeIds = new Set<string>();
+    const filters = { showEndpoints, showSchemas, methodFilters, tagFilters, pathPattern, searchQuery };
 
     const filteredNodes = nodes.map((node) => {
       // Check if manually hidden first
@@ -57,78 +163,7 @@ export function useFilteredGraph(
         };
       }
 
-      let matchesFilter = true;
-
-      if (node.type === 'endpoint') {
-        const data = node.data as EndpointNodeData;
-        const endpoint = data.endpoint;
-
-        // Check endpoint visibility toggle
-        if (!showEndpoints) {
-          matchesFilter = false;
-        }
-
-        // Check method filter
-        if (matchesFilter && methodFilters.length > 0) {
-          if (!methodFilters.includes(endpoint.method)) {
-            matchesFilter = false;
-          }
-        }
-
-        // Check tag filter
-        if (matchesFilter && tagFilters.length > 0) {
-          if (!endpoint.tags.some((tag) => tagFilters.includes(tag))) {
-            matchesFilter = false;
-          }
-        }
-
-        // Check path pattern
-        if (matchesFilter && pathPattern) {
-          if (!matchPathPattern(endpoint.path, pathPattern)) {
-            matchesFilter = false;
-          }
-        }
-
-        // Check search query
-        if (matchesFilter && searchQuery) {
-          const searchableText = [
-            endpoint.path,
-            endpoint.method,
-            endpoint.summary || '',
-            endpoint.description || '',
-            endpoint.operationId || '',
-            ...endpoint.tags,
-          ].join(' ');
-
-          if (!matchesSearch(searchableText, searchQuery)) {
-            matchesFilter = false;
-          }
-        }
-      } else if (node.type === 'schema') {
-        const data = node.data as SchemaNodeData;
-        const schema = data.schema;
-
-        // Check schema visibility toggle
-        if (!showSchemas) {
-          matchesFilter = false;
-        }
-
-        // Check search query
-        if (matchesFilter && searchQuery) {
-          const propertyNames = schema.properties
-            ? Object.keys(schema.properties)
-            : [];
-          const searchableText = [
-            schema.name,
-            schema.description || '',
-            ...propertyNames,
-          ].join(' ');
-
-          if (!matchesSearch(searchableText, searchQuery)) {
-            matchesFilter = false;
-          }
-        }
-      }
+      const matchesFilter = nodeMatchesFilters(node, filters);
 
       if (matchesFilter) {
         matchingNodeIds.add(node.id);
