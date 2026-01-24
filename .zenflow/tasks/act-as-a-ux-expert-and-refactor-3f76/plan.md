@@ -284,3 +284,54 @@ It looks like the tool bar now eventhough clearer in intent, becomes too long fo
   - Split view (50% width) shows compact mode with icon-only controls
   - Filters dropdown works with Path/Methods/Tags combined
   - Responsive transition works when switching between views
+
+### [x] Step: the graph controls arent themed or badly themed
+<!-- chat-id: 92ee6057-6697-4070-8cbe-e50dd8e08903 -->
+<!-- agent: claude-code-light -->
+
+**Completed**: Fixed React Flow controls theming to match the application's design system.
+
+**Problem:**
+- React Flow's built-in Controls component (zoom in/out, fit view, toggle interactivity) had default styling that didn't match the app's theme
+- Controls appeared unstyled or poorly themed in both light and dark modes
+- MiniMap and Background components also lacked proper theming
+
+**Solution:**
+Added comprehensive CSS theming in `src/index.css` for all React Flow UI components:
+
+1. **Controls Panel**:
+   - Applied card background with proper border and shadow
+   - Themed buttons with transparent background and accent hover state
+   - Added proper foreground color from theme
+   - Smooth transition effects on hover
+   - Proper disabled state styling (40% opacity)
+   - Rounded corners matching design system
+
+2. **MiniMap**:
+   - Card background with border and shadow
+   - Accent color for viewport mask (20% opacity)
+   - Muted fill for nodes with border stroke
+
+3. **Background**:
+   - Applied background color from theme
+   - Themed dot pattern with muted foreground (20% opacity in light, 10% in dark)
+
+**Files modified:**
+- `src/index.css` - Added comprehensive React Flow theming styles
+
+**Verification:**
+- Build passes (`npm run build`)
+- Lint passes (`npm run lint`)
+- All 158 tests pass (`npm run test`)
+- Manual testing via Playwright in browser:
+  - Light mode: Controls have proper card styling with subtle shadows
+  - Dark mode: Controls adapt to dark theme colors
+  - Hover states: Buttons show accent background on hover
+  - All controls maintain consistent theming with rest of UI
+  - MiniMap has proper theming in bottom-right corner
+  - Background dots use theme colors
+
+**Screenshots:**
+- `.zenflow/tasks/act-as-a-ux-expert-and-refactor-3f76/controls-light-theme.png`
+- `.zenflow/tasks/act-as-a-ux-expert-and-refactor-3f76/controls-dark-theme.png`
+- `.zenflow/tasks/act-as-a-ux-expert-and-refactor-3f76/controls-hover-state.png`

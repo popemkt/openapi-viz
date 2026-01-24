@@ -66,6 +66,68 @@ body {
   box-shadow: 0 0 0 2px #3b82f6;
 }
 
+/* React Flow Controls theming */
+.react-flow__controls {
+  @apply bg-card border border-border shadow-md rounded-lg;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+}
+
+.react-flow__controls-button {
+  @apply bg-transparent hover:bg-accent text-foreground border-none rounded-md transition-colors;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.react-flow__controls-button:hover {
+  @apply bg-accent;
+}
+
+.react-flow__controls-button:disabled {
+  @apply opacity-40 cursor-not-allowed;
+  pointer-events: none;
+}
+
+.react-flow__controls-button svg {
+  @apply fill-current;
+  width: 16px;
+  height: 16px;
+}
+
+/* React Flow MiniMap theming */
+.react-flow__minimap {
+  @apply bg-card border border-border shadow-md rounded-lg;
+}
+
+.react-flow__minimap-mask {
+  @apply fill-accent/20;
+}
+
+.react-flow__minimap-node {
+  @apply fill-muted stroke-border;
+}
+
+/* React Flow Background theming */
+.react-flow__background {
+  @apply bg-background;
+}
+
+.react-flow__background .react-flow__background-pattern {
+  @apply fill-muted-foreground/20;
+}
+
+/* Dark mode adjustments for React Flow */
+.dark .react-flow__background .react-flow__background-pattern {
+  @apply fill-muted-foreground/10;
+}
+
 /* Resizable panels */
 .resize-handle {
   background: #e5e7eb;
