@@ -107,7 +107,8 @@ Restructure the FilterToolbar from a flat horizontal layout to organized section
 
 ---
 
-### [ ] Step: Improve BulkActionsToolbar
+### [x] Step: Improve BulkActionsToolbar
+<!-- chat-id: 0c412674-031c-4ec4-af94-4f0137df77be -->
 
 Improve clarity and reduce duplication in the bulk actions toolbar.
 
@@ -124,6 +125,24 @@ Improve clarity and reduce duplication in the bulk actions toolbar.
 - All selection actions work correctly
 - Hidden nodes indicator is clear and functional
 - Keyboard shortcuts still work (Del, Esc)
+
+**Completed**: Refactored `src/features/graph/components/BulkActionsToolbar.tsx` with:
+- **Added text labels** to all action buttons: Hide, Focus, Expand, Clear, Show All, Relayout
+- **Enhanced ActionButton component**:
+  - Added `shortcut` prop for keyboard hint in tooltips (e.g., "Hide (Del)", "Clear (Esc)")
+  - Changed default variant from `ghost` to `outline` for better visibility
+  - Added `showLabel` prop for flexibility
+  - Tooltips show full context with shortcuts when available
+- **Improved visual design**:
+  - Primary actions (Hide, Focus, Expand) use outlined buttons for emphasis
+  - Secondary actions (Clear, Relayout) use ghost variant with muted colors
+  - Consistent spacing with `gap-1.5` between sections
+  - Reduced separator height (h-5) for visual balance
+- **Reorganized layout**:
+  - Selection badge → Primary actions (Hide/Focus/Expand) → Clear button
+  - Hidden indicator as badge → Show All button
+  - Relayout as final action (ghost variant, less prominent)
+- Verified: Build and lint pass
 
 ---
 

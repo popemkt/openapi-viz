@@ -16,34 +16,41 @@ import { cn } from '@/lib/utils';
 interface ActionButtonProps {
   icon: React.ElementType;
   label: string;
+  shortcut?: string;
   onClick: () => void;
   variant?: 'default' | 'outline' | 'ghost' | 'destructive';
   className?: string;
   disabled?: boolean;
+  showLabel?: boolean;
 }
 
 function ActionButton({
   icon: Icon,
   label,
+  shortcut,
   onClick,
-  variant = 'ghost',
+  variant = 'outline',
   className,
   disabled,
+  showLabel = true,
 }: ActionButtonProps) {
+  const tooltipText = shortcut ? `${label} (${shortcut})` : label;
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
           variant={variant}
           size="sm"
-          className={cn('h-8 w-8 p-0', className)}
+          className={cn('h-8 gap-1.5', showLabel ? 'px-2.5' : 'w-8 p-0', className)}
           onClick={onClick}
           disabled={disabled}
         >
           <Icon className="h-4 w-4" />
+          {showLabel && <span className="text-xs">{label}</span>}
         </Button>
       </TooltipTrigger>
-      <TooltipContent side="top">{label}</TooltipContent>
+      <TooltipContent side="top">{tooltipText}</TooltipContent>
     </Tooltip>
   );
 }
@@ -100,68 +107,74 @@ export const BulkActionsToolbar = memo(function BulkActionsToolbar() {
         'animate-in fade-in-0 zoom-in-95 duration-200'
       )}
     >
-      <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1 shadow-lg">
-        {/* Selection actions */}
+      <div className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2 py-1.5 shadow-lg">
+        {/* Selection info and actions */}
         {hasSelection && (
           <>
-            <div className="flex items-center gap-0.5 px-1">
-              <Badge variant="secondary" className="h-6 px-2 text-xs font-medium">
-                {selectedNodeIds.size} selected
-              </Badge>
+            <Badge variant="secondary" className="h-6 px-2.5 text-xs font-medium">
+              {selectedNodeIds.size} selected
+            </Badge>
+
+            <div className="h-5 w-px bg-border" />
+
+            <div className="flex items-center gap-1">
+              <ActionButton
+                icon={EyeOffIcon}
+                label="Hide"
+                shortcut="Del"
+                onClick={handleHide}
+              />
+              <ActionButton
+                icon={TargetIcon}
+                label="Focus"
+                onClick={handleFocus}
+              />
+              <ActionButton
+                icon={Maximize2Icon}
+                label="Expand"
+                onClick={handleExpand}
+              />
             </div>
 
-            <div className="h-6 w-px bg-border" />
-
-            <ActionButton
-              icon={EyeOffIcon}
-              label="Hide selected (Del)"
-              onClick={handleHide}
-            />
-            <ActionButton
-              icon={TargetIcon}
-              label="Focus: show only selection + neighbors"
-              onClick={handleFocus}
-            />
-            <ActionButton
-              icon={Maximize2Icon}
-              label="Expand: select all connected nodes"
-              onClick={handleExpand}
-            />
-
-            <div className="h-6 w-px bg-border" />
+            <div className="h-5 w-px bg-border" />
 
             <ActionButton
               icon={XIcon}
-              label="Clear selection (Esc)"
+              label="Clear"
+              shortcut="Esc"
               onClick={handleClear}
+              variant="ghost"
+              className="text-muted-foreground hover:text-foreground"
             />
           </>
         )}
 
-        {/* Hidden nodes actions */}
+        {/* Hidden nodes indicator and unhide action */}
         {hasHidden && (
           <>
-            {hasSelection && <div className="h-6 w-px bg-border" />}
+            {hasSelection && <div className="h-5 w-px bg-border" />}
 
-            <div className="flex items-center gap-1 px-1">
-              <ActionButton
-                icon={EyeIcon}
-                label={`Show ${hiddenNodeIds.size} hidden node${hiddenNodeIds.size > 1 ? 's' : ''}`}
-                onClick={handleUnhideAll}
-              />
-              <Badge variant="outline" className="h-6 px-2 text-xs">
+            <div className="flex items-center gap-1.5">
+              <Badge variant="outline" className="h-6 px-2.5 text-xs font-medium">
                 {hiddenNodeIds.size} hidden
               </Badge>
+              <ActionButton
+                icon={EyeIcon}
+                label="Show All"
+                onClick={handleUnhideAll}
+              />
             </div>
           </>
         )}
 
-        {/* Layout action - always visible when toolbar shows */}
-        <div className="h-6 w-px bg-border" />
+        {/* Relayout action */}
+        <div className="h-5 w-px bg-border" />
         <ActionButton
           icon={LayoutGridIcon}
-          label="Relayout visible nodes"
+          label="Relayout"
           onClick={handleRelayout}
+          variant="ghost"
+          className="text-muted-foreground hover:text-foreground"
         />
       </div>
     </div>
