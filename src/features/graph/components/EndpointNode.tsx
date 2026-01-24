@@ -1,12 +1,26 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { EndpointNodeData, HttpMethod } from '@/types';
 import { cn } from '@/lib/utils';
 import { METHOD_COLORS } from '@/constants';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useUIStore } from '@/stores/uiStore';
+import { useUIStore, type LayoutDirection } from '@/stores/uiStore';
 import { truncateEndpointPath } from '@/utils/displayUtils';
+
+// Map layout direction to handle positions
+function getHandlePositions(direction: LayoutDirection): { source: Position; target: Position } {
+  switch (direction) {
+    case 'LR':
+      return { source: Position.Right, target: Position.Left };
+    case 'RL':
+      return { source: Position.Left, target: Position.Right };
+    case 'TB':
+      return { source: Position.Bottom, target: Position.Top };
+    case 'BT':
+      return { source: Position.Top, target: Position.Bottom };
+  }
+}
 
 interface EndpointNodeProps {
   data: EndpointNodeData;
@@ -16,7 +30,7 @@ interface EndpointNodeProps {
 export const EndpointNode = memo(function EndpointNode({ data, selected }: EndpointNodeProps) {
   const { endpoint, dimmed } = data;
   const methodColor = METHOD_COLORS[endpoint.method as HttpMethod];
-  const { endpointPathDisplayMode, compactLevel, maxNodeWidth, nodeScale } = useUIStore();
+  const { endpointPathDisplayMode, compactLevel, maxNodeWidth, nodeScale, layoutDirection } = useUIStore();
 
   const isCompact = compactLevel === 'compact' || compactLevel === 'minimal';
   const isMinimal = compactLevel === 'minimal';
@@ -30,6 +44,12 @@ export const EndpointNode = memo(function EndpointNode({ data, selected }: Endpo
   // Calculate scaled dimensions
   const scaledMinWidth = 180 * nodeScale;
   const scaledMaxWidth = isCompact ? maxNodeWidth * nodeScale : undefined;
+
+  // Get handle positions based on layout direction
+  const handlePositions = useMemo(() => getHandlePositions(layoutDirection), [layoutDirection]);
+
+  // Calculate header font size based on scale
+  const headerFontSize = `${0.75 * nodeScale}rem`; // 0.75rem = text-xs base
 
   return (
     <div
@@ -45,11 +65,15 @@ export const EndpointNode = memo(function EndpointNode({ data, selected }: Endpo
         fontSize: `${nodeScale}rem`,
       }}
     >
-      <Handle type="target" position={Position.Left} className="!bg-primary" />
+      <Handle type="target" position={handlePositions.target} className="!bg-primary" />
 
       {/* Header with method badge */}
       <div className={cn('flex items-center gap-2 rounded-t-md px-3 py-2', methodColor.bg)}>
-        <Badge variant="outline" className={cn('uppercase font-mono text-xs', methodColor.text, methodColor.border)}>
+        <Badge
+          variant="outline"
+          className={cn('uppercase font-mono', methodColor.text, methodColor.border)}
+          style={{ fontSize: headerFontSize }}
+        >
           {endpoint.method}
         </Badge>
         {/* In minimal mode, show truncated path in header */}
@@ -57,7 +81,10 @@ export const EndpointNode = memo(function EndpointNode({ data, selected }: Endpo
           isPathTruncated ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="font-mono text-xs text-foreground truncate cursor-help flex-1 min-w-0">
+                <span
+                  className="font-mono text-foreground truncate cursor-help flex-1 min-w-0"
+                  style={{ fontSize: headerFontSize }}
+                >
                   {displayPath}
                 </span>
               </TooltipTrigger>
@@ -66,13 +93,16 @@ export const EndpointNode = memo(function EndpointNode({ data, selected }: Endpo
               </TooltipContent>
             </Tooltip>
           ) : (
-            <span className="font-mono text-xs text-foreground truncate flex-1 min-w-0">
+            <span
+              className="font-mono text-foreground truncate flex-1 min-w-0"
+              style={{ fontSize: headerFontSize }}
+            >
               {displayPath}
             </span>
           )
         )}
         {endpoint.deprecated && (
-          <Badge variant="secondary" className="text-xs">
+          <Badge variant="secondary" style={{ fontSize: headerFontSize }}>
             deprecated
           </Badge>
         )}
@@ -113,7 +143,7 @@ export const EndpointNode = memo(function EndpointNode({ data, selected }: Endpo
         </div>
       )}
 
-      <Handle type="source" position={Position.Right} className="!bg-primary" />
+      <Handle type="source" position={handlePositions.source} className="!bg-primary" />
     </div>
   );
 });

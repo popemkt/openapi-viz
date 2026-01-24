@@ -120,6 +120,15 @@ Add user-adjustable node size scaling for readability at different zoom levels.
 - All tests pass (158), lint and typecheck pass
 - Bundle size: 859.93 KB (no significant change)
 
+**Follow-up Fixes** (chat-id: 0db87597-50a4-4b33-8039-ffc01c524ab9):
+1. **Header font size scaling**: Fixed to properly scale header text in minimal mode
+   - EndpointNode: Method badge and path text now use `headerFontSize = 0.75 * nodeScale rem`
+   - SchemaNode: Schema name now uses `headerFontSize = 0.875 * nodeScale rem`, icon also scales
+2. **Dynamic edge handle positions**: Fixed handles to match layout direction
+   - Added `getHandlePositions(direction)` helper function to both node components
+   - Handles now correctly position at Top/Bottom for TB/BT layouts, Left/Right for LR/RL
+   - Both source and target handles update based on `layoutDirection` from uiStore
+
 ---
 
 ### [x] Step: Testing & Final Verification

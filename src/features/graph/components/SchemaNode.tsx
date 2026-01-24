@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { SchemaNodeData, SchemaProperty } from '@/types';
 import { cn } from '@/lib/utils';
@@ -15,8 +15,22 @@ import {
   BookOpenIcon,
 } from 'lucide-react';
 import { EDGE_COLORS } from '@/constants/colors';
-import { useUIStore } from '@/stores/uiStore';
+import { useUIStore, type LayoutDirection } from '@/stores/uiStore';
 import { truncateSchemaName } from '@/utils/displayUtils';
+
+// Map layout direction to handle positions
+function getHandlePositions(direction: LayoutDirection): { source: Position; target: Position } {
+  switch (direction) {
+    case 'LR':
+      return { source: Position.Right, target: Position.Left };
+    case 'RL':
+      return { source: Position.Left, target: Position.Right };
+    case 'TB':
+      return { source: Position.Bottom, target: Position.Top };
+    case 'BT':
+      return { source: Position.Top, target: Position.Bottom };
+  }
+}
 
 interface SchemaNodeProps {
   data: SchemaNodeData;
@@ -25,7 +39,7 @@ interface SchemaNodeProps {
 
 export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNodeProps) {
   const { schema, hasDiscriminator, discriminatorValues, compositionType, incomingRefCount, outgoingRefCount, dimmed } = data;
-  const { schemaNameDisplayMode, compactLevel, maxNodeWidth, nodeScale } = useUIStore();
+  const { schemaNameDisplayMode, compactLevel, maxNodeWidth, nodeScale, layoutDirection } = useUIStore();
 
   const propertyCount = schema.properties ? Object.keys(schema.properties).length : 0;
   const requiredCount = schema.required?.length || 0;
@@ -52,6 +66,12 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
   const scaledMinWidth = 160 * nodeScale;
   const scaledMaxWidth = isCompact ? maxNodeWidth * nodeScale : undefined;
 
+  // Get handle positions based on layout direction
+  const handlePositions = useMemo(() => getHandlePositions(layoutDirection), [layoutDirection]);
+
+  // Calculate header font size based on scale (0.875rem = text-sm base)
+  const headerFontSize = `${0.875 * nodeScale}rem`;
+
   return (
     <div
       className={cn(
@@ -65,15 +85,21 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
         fontSize: `${nodeScale}rem`,
       }}
     >
-      <Handle type="target" position={Position.Left} className="!bg-slate-500" />
+      <Handle type="target" position={handlePositions.target} className="!bg-slate-500" />
 
       {/* Header */}
       <div className="flex items-center gap-2 rounded-t-md bg-slate-100 px-3 py-2 dark:bg-slate-800">
-        <BoxIcon className="h-4 w-4 flex-shrink-0 text-slate-600 dark:text-slate-400" />
+        <BoxIcon
+          className="flex-shrink-0 text-slate-600 dark:text-slate-400"
+          style={{ width: `${1 * nodeScale}rem`, height: `${1 * nodeScale}rem` }}
+        />
         {isNameTruncated ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="font-mono text-sm font-medium text-slate-700 dark:text-slate-300 truncate cursor-help">
+              <span
+                className="font-mono font-medium text-slate-700 dark:text-slate-300 truncate cursor-help"
+                style={{ fontSize: headerFontSize }}
+              >
                 {displayName}
               </span>
             </TooltipTrigger>
@@ -82,7 +108,10 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
             </TooltipContent>
           </Tooltip>
         ) : (
-          <span className="font-mono text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
+          <span
+            className="font-mono font-medium text-slate-700 dark:text-slate-300 truncate"
+            style={{ fontSize: headerFontSize }}
+          >
             {displayName}
           </span>
         )}
@@ -283,7 +312,7 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
         </div>
       )}
 
-      <Handle type="source" position={Position.Right} className="!bg-slate-500" />
+      <Handle type="source" position={handlePositions.source} className="!bg-slate-500" />
     </div>
   );
 });
