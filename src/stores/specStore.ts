@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { ParsedSpec, ParseError, SourceMap } from '@/types';
 
 interface SpecState {
@@ -120,51 +121,63 @@ components:
         - email
 `;
 
-export const useSpecStore = create<SpecState>((set) => ({
-  rawText: INITIAL_TEXT,
-  parsedSpec: null,
-  parseErrors: [],
-  sourceMap: null,
-  fileName: null,
-  isDirty: false,
-  isLoading: false,
-
-  setText: (text) =>
-    set({
-      rawText: text,
-      isDirty: true,
-    }),
-
-  setParsedSpec: (spec, sourceMap, errors) =>
-    set({
-      parsedSpec: spec,
-      sourceMap,
-      parseErrors: errors,
-    }),
-
-  loadFile: (content, fileName) =>
-    set({
-      rawText: content,
-      fileName,
-      isDirty: false,
-      parsedSpec: null,
-      parseErrors: [],
-    }),
-
-  markSaved: () =>
-    set({
-      isDirty: false,
-    }),
-
-  reset: () =>
-    set({
+export const useSpecStore = create<SpecState>()(
+  persist(
+    (set) => ({
       rawText: INITIAL_TEXT,
       parsedSpec: null,
       parseErrors: [],
       sourceMap: null,
       fileName: null,
       isDirty: false,
-    }),
+      isLoading: false,
 
-  setLoading: (isLoading) => set({ isLoading }),
-}));
+      setText: (text) =>
+        set({
+          rawText: text,
+          isDirty: true,
+        }),
+
+      setParsedSpec: (spec, sourceMap, errors) =>
+        set({
+          parsedSpec: spec,
+          sourceMap,
+          parseErrors: errors,
+        }),
+
+      loadFile: (content, fileName) =>
+        set({
+          rawText: content,
+          fileName,
+          isDirty: false,
+          parsedSpec: null,
+          parseErrors: [],
+        }),
+
+      markSaved: () =>
+        set({
+          isDirty: false,
+        }),
+
+      reset: () =>
+        set({
+          rawText: INITIAL_TEXT,
+          parsedSpec: null,
+          parseErrors: [],
+          sourceMap: null,
+          fileName: null,
+          isDirty: false,
+        }),
+
+      setLoading: (isLoading) => set({ isLoading }),
+    }),
+    {
+      name: 'openapi-viz-spec',
+      // Only persist the editor content and file name - not parsed results or transient state
+      partialize: (state) => ({
+        rawText: state.rawText,
+        fileName: state.fileName,
+      }),
+    }
+  )
+);
