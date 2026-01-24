@@ -35,6 +35,7 @@ export default [
         localStorage: 'readonly',
         HTMLElement: 'readonly',
         HTMLInputElement: 'readonly',
+        HTMLDivElement: 'readonly',
         MouseEvent: 'readonly',
         KeyboardEvent: 'readonly',
         Event: 'readonly',
@@ -45,6 +46,7 @@ export default [
         alert: 'readonly',
         structuredClone: 'readonly',
         MessageEvent: 'readonly',
+        ResizeObserver: 'readonly',
       },
     },
     plugins: {

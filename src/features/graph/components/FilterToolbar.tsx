@@ -1,6 +1,5 @@
-import { memo } from 'react';
+import { memo, useState, useEffect, useRef } from 'react';
 import {
-  FilterIcon,
   XIcon,
   SearchIcon,
   BoxIcon,
@@ -8,21 +7,20 @@ import {
   Maximize2Icon,
   SquareIcon,
   MinusIcon,
-  SettingsIcon,
   EyeOffIcon,
   HighlighterIcon,
-  EyeIcon,
   MousePointer2Icon,
   ArrowRightIcon,
   ArrowDownIcon,
   ArrowLeftIcon,
   ArrowUpIcon,
-  LayoutGridIcon,
+  SlidersHorizontalIcon,
+  LayoutIcon,
+  FilterIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Toggle } from '@/components/ui/toggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,12 +32,36 @@ import {
   DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { SegmentedControl, type SegmentedControlOption } from '@/components/ui/segmented-control';
 import { useFilterStore, useSpecStore, useUIStore, useGraphStore } from '@/stores';
 import { useMatchingNodeIds } from '../hooks/useFilteredGraph';
 import { HTTP_METHODS, METHOD_COLORS } from '@/constants';
 import { cn } from '@/lib/utils';
 import type { DisplayMode } from '@/utils/displayUtils';
 import type { LayoutDirection } from '@/stores/uiStore';
+import type { CompactLevel } from '@/stores/uiStore';
+
+// Node visibility options for segmented control
+type NodeVisibility = 'all' | 'endpoints' | 'schemas';
+
+const nodeVisibilityOptions: SegmentedControlOption<NodeVisibility>[] = [
+  { value: 'all', label: 'All', icon: <RouteIcon className="h-3.5 w-3.5" /> },
+  { value: 'endpoints', label: 'Endpoints', icon: <RouteIcon className="h-3.5 w-3.5" /> },
+  { value: 'schemas', label: 'Schemas', icon: <BoxIcon className="h-3.5 w-3.5" /> },
+];
+
+// Filter mode options for segmented control
+const filterModeOptions: SegmentedControlOption<'highlight' | 'hide'>[] = [
+  { value: 'highlight', label: 'Highlight', icon: <HighlighterIcon className="h-3.5 w-3.5" /> },
+  { value: 'hide', label: 'Hide', icon: <EyeOffIcon className="h-3.5 w-3.5" /> },
+];
+
+// Compact level options for segmented control in dropdown
+const compactLevelOptions: SegmentedControlOption<CompactLevel>[] = [
+  { value: 'normal', label: 'Full', icon: <Maximize2Icon className="h-3.5 w-3.5" /> },
+  { value: 'compact', label: 'Compact', icon: <SquareIcon className="h-3.5 w-3.5" /> },
+  { value: 'minimal', label: 'Minimal', icon: <MinusIcon className="h-3.5 w-3.5" /> },
+];
 
 export const FilterToolbar = memo(function FilterToolbar() {
   const {
@@ -50,8 +72,8 @@ export const FilterToolbar = memo(function FilterToolbar() {
     pathPattern,
     searchQuery,
     filterDisplayMode,
-    toggleEndpoints,
-    toggleSchemas,
+    setShowEndpoints,
+    setShowSchemas,
     toggleMethod,
     toggleTag,
     setPathPattern,
@@ -64,7 +86,7 @@ export const FilterToolbar = memo(function FilterToolbar() {
 
   const {
     compactLevel,
-    cycleCompactLevel,
+    setCompactLevel,
     schemaNameDisplayMode,
     setSchemaNameDisplayMode,
     endpointPathDisplayMode,
@@ -79,8 +101,7 @@ export const FilterToolbar = memo(function FilterToolbar() {
     setNodeScale,
   } = useUIStore();
 
-  const { hiddenNodeIds, showAllHiddenNodes, setSelectedNodeIds, relayoutVisibleNodes } = useGraphStore();
-  const hiddenCount = hiddenNodeIds.size;
+  const { setSelectedNodeIds, relayoutVisibleNodes } = useGraphStore();
 
   // Get matching (highlighted) node IDs for "Select Highlighted" feature
   const matchingNodeIds = useMatchingNodeIds();
@@ -93,6 +114,27 @@ export const FilterToolbar = memo(function FilterToolbar() {
     (searchQuery ? 1 : 0) +
     (!showEndpoints ? 1 : 0) +
     (!showSchemas ? 1 : 0);
+
+  // Derive node visibility value from showEndpoints and showSchemas
+  const nodeVisibility: NodeVisibility =
+    showEndpoints && showSchemas ? 'all' : showEndpoints ? 'endpoints' : 'schemas';
+
+  const handleNodeVisibilityChange = (value: NodeVisibility) => {
+    switch (value) {
+      case 'all':
+        setShowEndpoints(true);
+        setShowSchemas(true);
+        break;
+      case 'endpoints':
+        setShowEndpoints(true);
+        setShowSchemas(false);
+        break;
+      case 'schemas':
+        setShowEndpoints(false);
+        setShowSchemas(true);
+        break;
+    }
+  };
 
   // Show "Select Highlighted" button when in highlight mode with active filters
   const showSelectHighlighted = filterDisplayMode === 'highlight' && activeFilterCount > 0;
@@ -123,84 +165,98 @@ export const FilterToolbar = memo(function FilterToolbar() {
     BT: 'Bottom to Top',
   };
 
+  // Track if we need compact mode based on container width
+  const [isCompact, setIsCompact] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Use ResizeObserver to detect when we need compact mode
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        // Switch to compact mode when width < 700px
+        setIsCompact(entry.contentRect.width < 700);
+      }
+    });
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  // Compact mode: combine Methods + Tags into a single "Filters" dropdown
+  const hasMethodOrTagFilters = methodFilters.length > 0 || tagFilters.length > 0;
+
   return (
-    <div className="flex items-center gap-2 border-b border-border bg-card/50 px-3 py-2">
-      {/* Search input */}
-      <div className="relative flex-1 max-w-xs">
+    <div ref={containerRef} className="flex flex-wrap items-center gap-x-2 gap-y-1.5 border-b border-border bg-card/50 px-3 py-2">
+      {/* === SECTION 1: Search (always visible, responsive width) === */}
+      <div className="relative min-w-[140px] flex-1 max-w-[250px]">
         <SearchIcon className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Search endpoints & schemas..."
+          placeholder={isCompact ? "Search..." : "Search endpoints & schemas..."}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="h-8 pl-8 text-sm"
         />
       </div>
 
-      {/* Path pattern */}
-      <div className="relative max-w-[160px]">
-        <Input
-          placeholder="/api/*"
-          value={pathPattern}
-          onChange={(e) => setPathPattern(e.target.value)}
-          className="h-8 text-sm font-mono"
-          title="Path pattern (supports * wildcards)"
-        />
+      {/* Path pattern - hidden in very compact mode, shown in "More" dropdown */}
+      {!isCompact && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">Path:</span>
+          <Input
+            placeholder="/api/*"
+            value={pathPattern}
+            onChange={(e) => setPathPattern(e.target.value)}
+            className="h-8 w-[100px] text-sm font-mono"
+            title="Path pattern (supports * wildcards)"
+          />
+        </div>
+      )}
+
+      {/* Separator */}
+      <div className="h-6 w-px bg-border" />
+
+      {/* === SECTION 2: Node Visibility & Filter Mode === */}
+      {/* In compact mode: icon-only segmented controls */}
+      <div className="flex items-center gap-1.5">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1">
+              {!isCompact && <span className="text-xs text-muted-foreground whitespace-nowrap">Show:</span>}
+              <SegmentedControl
+                size="sm"
+                value={nodeVisibility}
+                onValueChange={handleNodeVisibilityChange}
+                options={nodeVisibilityOptions}
+                iconOnly={isCompact}
+              />
+            </div>
+          </TooltipTrigger>
+          {isCompact && <TooltipContent>Node visibility: {nodeVisibility}</TooltipContent>}
+        </Tooltip>
       </div>
 
-      {/* Toggle endpoints */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Toggle
-            pressed={showEndpoints}
-            onPressedChange={toggleEndpoints}
-            size="sm"
-            aria-label="Toggle endpoints"
-          >
-            <RouteIcon className="h-4 w-4" />
-          </Toggle>
-        </TooltipTrigger>
-        <TooltipContent>Show Endpoints</TooltipContent>
-      </Tooltip>
+      <div className="flex items-center gap-1.5">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1">
+              {!isCompact && <span className="text-xs text-muted-foreground whitespace-nowrap">Filter:</span>}
+              <SegmentedControl
+                size="sm"
+                value={filterDisplayMode}
+                onValueChange={setFilterDisplayMode}
+                options={filterModeOptions}
+                iconOnly={isCompact}
+              />
+            </div>
+          </TooltipTrigger>
+          {isCompact && <TooltipContent>Filter mode: {filterDisplayMode}</TooltipContent>}
+        </Tooltip>
+      </div>
 
-      {/* Toggle schemas */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Toggle
-            pressed={showSchemas}
-            onPressedChange={toggleSchemas}
-            size="sm"
-            aria-label="Toggle schemas"
-          >
-            <BoxIcon className="h-4 w-4" />
-          </Toggle>
-        </TooltipTrigger>
-        <TooltipContent>Show Schemas</TooltipContent>
-      </Tooltip>
-
-      {/* Filter display mode toggle */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Toggle
-            pressed={filterDisplayMode === 'highlight'}
-            onPressedChange={(pressed) => setFilterDisplayMode(pressed ? 'highlight' : 'hide')}
-            size="sm"
-            aria-label="Toggle filter display mode"
-          >
-            {filterDisplayMode === 'highlight' ? (
-              <HighlighterIcon className="h-4 w-4" />
-            ) : (
-              <EyeOffIcon className="h-4 w-4" />
-            )}
-          </Toggle>
-        </TooltipTrigger>
-        <TooltipContent>
-          {filterDisplayMode === 'highlight'
-            ? 'Highlight mode: dim non-matching (click to hide)'
-            : 'Hide mode: hide non-matching (click to highlight)'}
-        </TooltipContent>
-      </Tooltip>
-
-      {/* Select Highlighted button - visible in highlight mode with active filters */}
+      {/* Select Highlighted button - compact in narrow mode */}
       {showSelectHighlighted && (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -211,6 +267,7 @@ export const FilterToolbar = memo(function FilterToolbar() {
               onClick={handleSelectHighlighted}
             >
               <MousePointer2Icon className="h-4 w-4" />
+              {!isCompact && <span className="text-xs">Select</span>}
               <Badge variant="secondary" className="h-5 px-1.5 text-xs">
                 {matchingNodeIds.size}
               </Badge>
@@ -225,232 +282,265 @@ export const FilterToolbar = memo(function FilterToolbar() {
       {/* Separator */}
       <div className="h-6 w-px bg-border" />
 
-      {/* Compact level toggle - cycles through normal/compact/minimal */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={cycleCompactLevel}
-            aria-label="Cycle compact level"
-          >
-            {compactLevel === 'normal' && <Maximize2Icon className="h-4 w-4" />}
-            {compactLevel === 'compact' && <SquareIcon className="h-4 w-4" />}
-            {compactLevel === 'minimal' && <MinusIcon className="h-4 w-4" />}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          {compactLevel === 'normal' && 'Normal: Full details (click for compact)'}
-          {compactLevel === 'compact' && 'Compact: Truncated names (click for minimal)'}
-          {compactLevel === 'minimal' && 'Minimal: Headers only (click for normal)'}
-        </TooltipContent>
-      </Tooltip>
-
-      {/* Display settings dropdown */}
-      <DropdownMenu>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                <SettingsIcon className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-          </TooltipTrigger>
-          <TooltipContent>Display settings</TooltipContent>
-        </Tooltip>
-        <DropdownMenuContent align="start" className="w-56">
-          <DropdownMenuLabel className="text-xs">Schema Name Display</DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            value={schemaNameDisplayMode}
-            onValueChange={(value) => setSchemaNameDisplayMode(value as DisplayMode)}
-          >
-            <DropdownMenuRadioItem value="full">Full name</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="medium">Medium (last 2 parts)</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="short">Short (last part only)</DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel className="text-xs">Endpoint Path Display</DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            value={endpointPathDisplayMode}
-            onValueChange={(value) => setEndpointPathDisplayMode(value as DisplayMode)}
-          >
-            <DropdownMenuRadioItem value="full">Full path</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="medium">Medium (last 2 segments)</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="short">Short (last segment only)</DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel className="text-xs">Node Size</DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            value={String(nodeScale)}
-            onValueChange={(value) => setNodeScale(Number(value))}
-          >
-            <DropdownMenuRadioItem value="0.75">Small (75%)</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="1">Normal (100%)</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="1.25">Large (125%)</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="1.5">Extra Large (150%)</DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* Layout settings dropdown */}
-      <DropdownMenu>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                <LayoutGridIcon className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-          </TooltipTrigger>
-          <TooltipContent>Layout settings</TooltipContent>
-        </Tooltip>
-        <DropdownMenuContent align="start" className="w-56">
-          <DropdownMenuLabel className="text-xs">Layout Direction</DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            value={layoutDirection}
-            onValueChange={(value) => setLayoutDirection(value as LayoutDirection)}
-          >
-            {(['LR', 'TB', 'RL', 'BT'] as LayoutDirection[]).map((dir) => (
-              <DropdownMenuRadioItem key={dir} value={dir} className="gap-2">
-                {directionIcons[dir]}
-                <span>{directionLabels[dir]}</span>
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel className="text-xs">Spacing Preset</DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            value={`${rankSpacing}-${nodeSpacing}`}
-            onValueChange={(value) => {
-              const [rank, node] = value.split('-').map(Number);
-              setRankSpacing(rank);
-              setNodeSpacing(node);
-            }}
-          >
-            <DropdownMenuRadioItem value="50-20">Compact (50/20)</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="100-50">Normal (100/50)</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="150-80">Spacious (150/80)</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="200-100">Wide (200/100)</DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-          <DropdownMenuSeparator />
-          <div className="p-2">
-            <Button
-              size="sm"
-              className="w-full"
-              onClick={handleApplyLayout}
+      {/* === SECTION 3: View & Layout Settings (always dropdowns) === */}
+      <div className="flex items-center gap-1">
+        <DropdownMenu>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1.5">
+                  <SlidersHorizontalIcon className="h-4 w-4" />
+                  {!isCompact && <span className="text-xs">View</span>}
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            {isCompact && <TooltipContent>View settings</TooltipContent>}
+          </Tooltip>
+          <DropdownMenuContent align="start" className="w-64">
+            <DropdownMenuLabel className="text-xs">Detail Level</DropdownMenuLabel>
+            <div className="px-2 py-1.5">
+              <SegmentedControl
+                size="sm"
+                value={compactLevel}
+                onValueChange={setCompactLevel}
+                options={compactLevelOptions}
+                className="w-full"
+              />
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs">Schema Name Display</DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={schemaNameDisplayMode}
+              onValueChange={(value) => setSchemaNameDisplayMode(value as DisplayMode)}
             >
-              Apply Layout
-            </Button>
-          </div>
-        </DropdownMenuContent>
-      </DropdownMenu>
+              <DropdownMenuRadioItem value="full">Full name</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="medium">Medium (last 2 parts)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="short">Short (last part only)</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs">Endpoint Path Display</DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={endpointPathDisplayMode}
+              onValueChange={(value) => setEndpointPathDisplayMode(value as DisplayMode)}
+            >
+              <DropdownMenuRadioItem value="full">Full path</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="medium">Medium (last 2 segments)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="short">Short (last segment only)</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs">Node Size</DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={String(nodeScale)}
+              onValueChange={(value) => setNodeScale(Number(value))}
+            >
+              <DropdownMenuRadioItem value="0.75">Small (75%)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="1">Normal (100%)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="1.25">Large (125%)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="1.5">Extra Large (150%)</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1.5">
+                  <LayoutIcon className="h-4 w-4" />
+                  {!isCompact && <span className="text-xs">Layout</span>}
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            {isCompact && <TooltipContent>Layout settings</TooltipContent>}
+          </Tooltip>
+          <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuLabel className="text-xs">Direction</DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={layoutDirection}
+              onValueChange={(value) => setLayoutDirection(value as LayoutDirection)}
+            >
+              {(['LR', 'TB', 'RL', 'BT'] as LayoutDirection[]).map((dir) => (
+                <DropdownMenuRadioItem key={dir} value={dir} className="gap-2">
+                  {directionIcons[dir]}
+                  <span>{directionLabels[dir]}</span>
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs">Spacing</DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={`${rankSpacing}-${nodeSpacing}`}
+              onValueChange={(value) => {
+                const [rank, node] = value.split('-').map(Number);
+                setRankSpacing(rank);
+                setNodeSpacing(node);
+              }}
+            >
+              <DropdownMenuRadioItem value="50-20">Compact</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="100-50">Normal</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="150-80">Spacious</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="200-100">Wide</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
+            <div className="p-2">
+              <Button
+                size="sm"
+                className="w-full"
+                onClick={handleApplyLayout}
+              >
+                Apply Layout
+              </Button>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       {/* Separator */}
       <div className="h-6 w-px bg-border" />
 
-      {/* Method filter dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8">
-            Methods
-            {methodFilters.length > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                {methodFilters.length}
-              </Badge>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuLabel className="text-xs">HTTP Methods</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {HTTP_METHODS.map((method) => {
-            const colors = METHOD_COLORS[method];
-            return (
-              <DropdownMenuCheckboxItem
-                key={method}
-                checked={methodFilters.includes(method)}
-                onCheckedChange={() => toggleMethod(method)}
-              >
-                <span className={cn('uppercase font-mono text-xs', colors.text)}>
-                  {method}
-                </span>
-              </DropdownMenuCheckboxItem>
-            );
-          })}
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* Tags filter dropdown */}
-      {availableTags.length > 0 && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8">
-              Tags
-              {tagFilters.length > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                  {tagFilters.length}
-                </Badge>
+      {/* === SECTION 4: Filters (Methods, Tags, Path in compact mode) === */}
+      <div className="flex items-center gap-1">
+        {/* Compact mode: Combined "Filters" dropdown with Path, Methods, Tags */}
+        {isCompact ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 gap-1">
+                <FilterIcon className="h-4 w-4" />
+                <span className="text-xs">Filters</span>
+                {(hasMethodOrTagFilters || pathPattern) && (
+                  <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                    {methodFilters.length + tagFilters.length + (pathPattern ? 1 : 0)}
+                  </Badge>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-64">
+              {/* Path pattern in dropdown for compact mode */}
+              <DropdownMenuLabel className="text-xs">Path Pattern</DropdownMenuLabel>
+              <div className="px-2 py-1.5">
+                <Input
+                  placeholder="/api/*"
+                  value={pathPattern}
+                  onChange={(e) => setPathPattern(e.target.value)}
+                  className="h-8 text-sm font-mono"
+                  title="Path pattern (supports * wildcards)"
+                />
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs">HTTP Methods</DropdownMenuLabel>
+              {HTTP_METHODS.map((method) => {
+                const colors = METHOD_COLORS[method];
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={method}
+                    checked={methodFilters.includes(method)}
+                    onCheckedChange={() => toggleMethod(method)}
+                  >
+                    <span className={cn('uppercase font-mono text-xs', colors.text)}>
+                      {method}
+                    </span>
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
+              {availableTags.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs">Tags</DropdownMenuLabel>
+                  {availableTags.map((tag) => (
+                    <DropdownMenuCheckboxItem
+                      key={tag}
+                      checked={tagFilters.includes(tag)}
+                      onCheckedChange={() => toggleTag(tag)}
+                    >
+                      {tag}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </>
               )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
-            <DropdownMenuLabel className="text-xs">Tags</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {availableTags.map((tag) => (
-              <DropdownMenuCheckboxItem
-                key={tag}
-                checked={tagFilters.includes(tag)}
-                onCheckedChange={() => toggleTag(tag)}
-              >
-                {tag}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          /* Non-compact mode: Separate Methods and Tags dropdowns */
+          <>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1">
+                  <span className="text-xs">Methods</span>
+                  {methodFilters.length > 0 && (
+                    <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                      {methodFilters.length}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuLabel className="text-xs">HTTP Methods</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {HTTP_METHODS.map((method) => {
+                  const colors = METHOD_COLORS[method];
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={method}
+                      checked={methodFilters.includes(method)}
+                      onCheckedChange={() => toggleMethod(method)}
+                    >
+                      <span className={cn('uppercase font-mono text-xs', colors.text)}>
+                        {method}
+                      </span>
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-      {/* Show hidden nodes button */}
-      {hiddenCount > 0 && (
+            {availableTags.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 gap-1">
+                    <span className="text-xs">Tags</span>
+                    {tagFilters.length > 0 && (
+                      <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                        {tagFilters.length}
+                      </Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
+                  <DropdownMenuLabel className="text-xs">Tags</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {availableTags.map((tag) => (
+                    <DropdownMenuCheckboxItem
+                      key={tag}
+                      checked={tagFilters.includes(tag)}
+                      onCheckedChange={() => toggleTag(tag)}
+                    >
+                      {tag}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* === Clear Filters Button (only when filters active) === */}
+      {activeFilterCount > 0 && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="h-8 gap-1"
-              onClick={showAllHiddenNodes}
+              className="h-8 gap-1 text-muted-foreground hover:text-foreground"
+              onClick={resetFilters}
             >
-              <EyeIcon className="h-4 w-4" />
-              <Badge variant="secondary" className="h-5 px-1.5 text-xs">
-                {hiddenCount}
-              </Badge>
+              <XIcon className="h-4 w-4" />
+              {!isCompact && <span className="text-xs">Clear</span>}
+              <span className="text-xs">({activeFilterCount})</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Show {hiddenCount} hidden node{hiddenCount > 1 ? 's' : ''} (press Del to hide selected)</TooltipContent>
+          <TooltipContent>Clear all filters</TooltipContent>
         </Tooltip>
-      )}
-
-      {/* Active filters indicator and reset */}
-      {activeFilterCount > 0 && (
-        <div className="flex items-center gap-1">
-          <Badge variant="outline" className="text-xs">
-            <FilterIcon className="mr-1 h-3 w-3" />
-            {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
-          </Badge>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0"
-                onClick={resetFilters}
-              >
-                <XIcon className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Clear all filters</TooltipContent>
-          </Tooltip>
-        </div>
       )}
     </div>
   );
