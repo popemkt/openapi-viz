@@ -216,3 +216,40 @@ Final verification and bug fixes.
 - `pnpm test` passes (158 tests) ✓
 - Manual testing: clicking nodes works without errors ✓
 - No console errors ✓
+
+---
+
+### [x] Step: Bug fix - Marquee selection
+<!-- chat-id: 6027a0ab-7de7-493b-9988-750c93587347 -->
+<!-- agent: claude-code -->
+
+**Issue:** Marquee drag selection was not selecting nodes covered by the selection box, and there was visible stutter/lag when the marquee first touched a node.
+
+**Root Cause:** The `handleNodesChange` callback was applying ALL node changes including selection changes (`type: 'select'`). This conflicted with our separate selection handling via `onSelectionChange`, causing:
+1. Double-processing of selection state
+2. Conflicts between React Flow's internal selection and our store
+3. Performance issues from redundant state updates during drag
+
+**Fix:** Filter out selection changes from `onNodesChange` since we handle selection separately:
+```typescript
+const handleNodesChange = useCallback(
+  (changes: NodeChange<GraphNode>[]) => {
+    // Filter out selection changes - we handle selection separately via onSelectionChange
+    const nonSelectionChanges = changes.filter((change) => change.type !== 'select');
+    if (nonSelectionChanges.length === 0) return;
+    const updatedNodes = applyNodeChanges(nonSelectionChanges, storeNodes);
+    setNodes(updatedNodes);
+  },
+  [storeNodes, setNodes]
+);
+```
+
+**Files Modified:**
+- `src/features/graph/components/GraphCanvas.tsx`
+
+**Verification:**
+- `pnpm typecheck` passes ✓
+- `pnpm test` passes (158 tests) ✓
+- Marquee selection now selects all covered nodes (tested with 5/5 nodes) ✓
+- No stutter or lag during marquee drag ✓
+- No console errors ✓

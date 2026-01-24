@@ -63,10 +63,15 @@ function GraphCanvasInner() {
 
   const handleNodesChange = useCallback(
     (changes: NodeChange<GraphNode>[]) => {
-      // Apply all changes using React Flow's helper to keep internal state in sync
-      // This is required to fix error #015 - nodes must be properly initialized
-      // React Flow needs to track dimensions, selection state, etc.
-      const updatedNodes = applyNodeChanges(changes, storeNodes);
+      // Filter out selection changes - we handle selection separately via onSelectionChange
+      // This prevents conflicts between our selection state and React Flow's internal state
+      const nonSelectionChanges = changes.filter((change) => change.type !== 'select');
+
+      if (nonSelectionChanges.length === 0) return;
+
+      // Apply non-selection changes using React Flow's helper
+      // This handles position, dimensions, and other node state
+      const updatedNodes = applyNodeChanges(nonSelectionChanges, storeNodes);
       setNodes(updatedNodes);
     },
     [storeNodes, setNodes]
