@@ -146,7 +146,8 @@ Improve clarity and reduce duplication in the bulk actions toolbar.
 
 ---
 
-### [ ] Step: Polish Top Toolbar
+### [x] Step: Polish Top Toolbar
+<!-- chat-id: 0058593c-0e3c-409b-b5a4-359330bae1dd -->
 
 Improve the header toolbar with clearer labels and reduced density.
 
@@ -164,6 +165,18 @@ Improve the header toolbar with clearer labels and reduced density.
 - Export functionality preserved
 - View mode switching works
 - Parse status information accessible
+
+**Completed**: Refactored `src/app/Layout.tsx` with:
+- **File operations with text labels**: New, Open, Save buttons now show icon + label (e.g., "+ New", "Open", "Save")
+- **Labeled Export dropdown**: Added "Export" text + chevron indicator to make it clear it's a dropdown
+- **Simplified parse status**:
+  - Loading: Just spinner icon, details on hover
+  - Errors: Icon + count, full error messages on hover (up to 3)
+  - Warnings: Icon + count, details on hover
+  - Success: Just checkmark icon, endpoint/schema counts on hover
+  - Added `cursor-help` to indicate hoverable status indicators
+- **View mode SegmentedControl**: Replaced icon-only ToggleGroup with labeled SegmentedControl showing "Editor", "Split", "Graph" with icons
+- Verified: Build and lint pass
 
 ---
 

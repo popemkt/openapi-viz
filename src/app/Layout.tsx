@@ -13,6 +13,7 @@ import {
   AlertCircleIcon,
   CheckCircleIcon,
   LoaderIcon,
+  ChevronDownIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,10 +23,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { SegmentedControl, type SegmentedControlOption } from '@/components/ui/segmented-control';
 import { useUIStore, type ViewMode } from '@/stores';
 import { useSpecStore } from '@/stores';
 import { useFileOperations } from '@/features/file-manager';
@@ -49,6 +50,12 @@ export function Layout({ children }: LayoutProps) {
     dark: <MoonIcon className="h-4 w-4" />,
     system: <MonitorIcon className="h-4 w-4" />,
   };
+
+  const viewModeOptions: SegmentedControlOption<ViewMode>[] = [
+    { value: 'editor', label: 'Editor', icon: <PanelLeftIcon className="h-4 w-4" /> },
+    { value: 'split', label: 'Split', icon: <ColumnsIcon className="h-4 w-4" /> },
+    { value: 'graph', label: 'Graph', icon: <PanelRightIcon className="h-4 w-4" /> },
+  ];
 
   return (
     <div
@@ -74,80 +81,99 @@ export function Layout({ children }: LayoutProps) {
           )}
         </div>
 
-        {/* Parse status */}
-        <div className="ml-4 flex items-center gap-2">
+        {/* Parse status - simplified with icon + hover for details */}
+        <div className="ml-4 flex items-center gap-1.5">
           {isLoading && (
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <LoaderIcon className="h-4 w-4 animate-spin" />
-              <span className="text-xs">Parsing...</span>
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <LoaderIcon className="h-4 w-4 animate-spin" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>Parsing specification...</TooltipContent>
+            </Tooltip>
           )}
           {!isLoading && errorCount > 0 && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 text-destructive">
+                <div className="flex cursor-help items-center gap-1 text-destructive">
                   <AlertCircleIcon className="h-4 w-4" />
-                  <span className="text-xs">{errorCount} error{errorCount > 1 ? 's' : ''}</span>
+                  <span className="text-xs font-medium">{errorCount}</span>
                 </div>
               </TooltipTrigger>
-              <TooltipContent>
-                {parseErrors.slice(0, 3).map((e, i) => (
-                  <div key={i} className="text-xs">{e.message}</div>
-                ))}
-                {parseErrors.length > 3 && (
-                  <div className="text-xs">...and {parseErrors.length - 3} more</div>
+              <TooltipContent className="max-w-xs">
+                <p className="mb-1 font-medium">{errorCount} parse error{errorCount > 1 ? 's' : ''}</p>
+                {parseErrors
+                  .filter((e) => e.severity === 'error')
+                  .slice(0, 3)
+                  .map((e, i) => (
+                    <p key={i} className="text-xs text-muted-foreground">{e.message}</p>
+                  ))}
+                {errorCount > 3 && (
+                  <p className="text-xs text-muted-foreground">...and {errorCount - 3} more</p>
+                )}
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {!isLoading && warningCount > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex cursor-help items-center gap-1 text-amber-600">
+                  <AlertCircleIcon className="h-4 w-4" />
+                  <span className="text-xs font-medium">{warningCount}</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="mb-1 font-medium">{warningCount} warning{warningCount > 1 ? 's' : ''}</p>
+                {parseErrors
+                  .filter((e) => e.severity === 'warning')
+                  .slice(0, 3)
+                  .map((e, i) => (
+                    <p key={i} className="text-xs text-muted-foreground">{e.message}</p>
+                  ))}
+                {warningCount > 3 && (
+                  <p className="text-xs text-muted-foreground">...and {warningCount - 3} more</p>
                 )}
               </TooltipContent>
             </Tooltip>
           )}
           {!isLoading && errorCount === 0 && parsedSpec && (
-            <div className="flex items-center gap-1 text-green-600">
-              <CheckCircleIcon className="h-4 w-4" />
-              <span className="text-xs">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex cursor-help items-center gap-1 text-green-600">
+                  <CheckCircleIcon className="h-4 w-4" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
                 {parsedSpec.endpoints.length} endpoints, {parsedSpec.schemas.length} schemas
-              </span>
-            </div>
-          )}
-          {!isLoading && warningCount > 0 && (
-            <Badge variant="outline" className="text-xs text-amber-600">
-              {warningCount} warning{warningCount > 1 ? 's' : ''}
-            </Badge>
+              </TooltipContent>
+            </Tooltip>
           )}
         </div>
 
-        {/* File operations */}
+        {/* File operations - with text labels */}
         <div className="ml-4 flex items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={handleNew}>
-                <PlusIcon className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>New</TooltipContent>
-          </Tooltip>
+          <Button variant="ghost" size="sm" onClick={handleNew} className="gap-1.5">
+            <PlusIcon className="h-4 w-4" />
+            <span className="text-xs">New</span>
+          </Button>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={handleOpen}>
-                <FileIcon className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Open</TooltipContent>
-          </Tooltip>
+          <Button variant="ghost" size="sm" onClick={handleOpen} className="gap-1.5">
+            <FileIcon className="h-4 w-4" />
+            <span className="text-xs">Open</span>
+          </Button>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={handleSave}>
-                <SaveIcon className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Save</TooltipContent>
-          </Tooltip>
+          <Button variant="ghost" size="sm" onClick={handleSave} className="gap-1.5">
+            <SaveIcon className="h-4 w-4" />
+            <span className="text-xs">Save</span>
+          </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" className="gap-1.5">
                 <DownloadIcon className="h-4 w-4" />
+                <span className="text-xs">Export</span>
+                <ChevronDownIcon className="h-3 w-3 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
@@ -161,40 +187,14 @@ export function Layout({ children }: LayoutProps) {
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* View mode toggle */}
-        <ToggleGroup
-          type="single"
+        {/* View mode toggle - with labeled segmented control */}
+        <SegmentedControl
           value={viewMode}
-          onValueChange={(value) => value && setViewMode(value as ViewMode)}
+          onValueChange={setViewMode}
+          options={viewModeOptions}
+          size="sm"
           className="mr-4"
-        >
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <ToggleGroupItem value="editor" aria-label="Editor only">
-                <PanelLeftIcon className="h-4 w-4" />
-              </ToggleGroupItem>
-            </TooltipTrigger>
-            <TooltipContent>Editor Only</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <ToggleGroupItem value="split" aria-label="Split view">
-                <ColumnsIcon className="h-4 w-4" />
-              </ToggleGroupItem>
-            </TooltipTrigger>
-            <TooltipContent>Split View</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <ToggleGroupItem value="graph" aria-label="Graph only">
-                <PanelRightIcon className="h-4 w-4" />
-              </ToggleGroupItem>
-            </TooltipTrigger>
-            <TooltipContent>Graph Only</TooltipContent>
-          </Tooltip>
-        </ToggleGroup>
+        />
 
         {/* Theme toggle */}
         <DropdownMenu>
