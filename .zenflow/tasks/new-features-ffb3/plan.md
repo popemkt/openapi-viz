@@ -188,3 +188,31 @@ Final verification and bug fixes.
 - Production build succeeds ✓
 
 **Completed:** All automated verification passed (158 tests, ESLint, TypeScript). Reviewed manual testing checklist from spec - all features ready for user testing. Tested with comprehensive-demo.yaml (~40 nodes). Production build succeeds. Created `report.md` documenting all implementations, test coverage, and architecture decisions.
+
+### [x] Step: Bug fix
+<!-- chat-id: 6027a0ab-7de7-493b-9988-750c93587347 -->
+<!-- agent: claude-code -->
+
+**Issue:** "Maximum update depth exceeded" error when clicking a node, caused by infinite loop in `onSelectionChange` handler.
+
+**Root Cause:** The `handleSelectionChange` callback had `selectedNodeIds` in its dependency array, which caused the callback to be recreated on every selection change. Combined with setting `selected` property on nodes AND having `onSelectionChange`, this created a feedback loop:
+1. Node clicked → `selectNode()` updates `selectedNodeIds`
+2. `nodesWithSelection` recomputes with `selected: true`
+3. React Flow receives nodes with new selection state
+4. React Flow fires `onSelectionChange`
+5. Handler compares with stale `selectedNodeIds` reference → updates store → loop repeats
+
+**Fix:** Added a `useRef` to track the last selection set, independent of React's render cycle:
+1. Added `lastSelectionRef = useRef<Set<string>>(new Set())` to track last selection
+2. Added `useEffect` to keep ref in sync with store selection
+3. Modified `handleSelectionChange` to compare against ref instead of state
+4. Removed `selectedNodeIds` from callback dependencies
+
+**Files Modified:**
+- `src/features/graph/components/GraphCanvas.tsx`
+
+**Verification:**
+- `pnpm typecheck` passes ✓
+- `pnpm test` passes (158 tests) ✓
+- Manual testing: clicking nodes works without errors ✓
+- No console errors ✓

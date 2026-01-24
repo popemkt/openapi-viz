@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useEffect } from 'react';
+import { useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -32,6 +32,16 @@ const nodeTypes: Record<string, any> = {
 function GraphCanvasInner() {
   const { nodes: storeNodes, edges: storeEdges, selectNode, selectedNodeIds, setNodes, hideNodes, setSelectedNodeIds } = useGraphStore();
 
+  // Track the last selection we set to prevent infinite loops
+  // When we update selection from onSelectionChange, React Flow will fire onSelectionChange again
+  // We use this ref to detect if the change came from us and skip the update
+  const lastSelectionRef = useRef<Set<string>>(new Set());
+
+  // Keep the ref in sync with store selection (for changes from other sources like handleNodeClick)
+  useEffect(() => {
+    lastSelectionRef.current = selectedNodeIds;
+  }, [selectedNodeIds]);
+
   // Apply filters to nodes and edges
   const { filteredNodes, filteredEdges } = useFilteredGraph(storeNodes, storeEdges);
 
@@ -63,18 +73,22 @@ function GraphCanvasInner() {
   );
 
   // Sync React Flow's selection state with our store
-  // Uses equality check to prevent infinite loops
+  // Uses a ref to track our last update and prevent infinite loops
   const handleSelectionChange = useCallback(
     ({ nodes: selectedNodes }: OnSelectionChangeParams) => {
       const newIds = new Set(selectedNodes.map((n) => n.id));
+      const lastIds = lastSelectionRef.current;
 
-      // Check if selection actually changed to prevent infinite loops
-      if (newIds.size !== selectedNodeIds.size ||
-          ![...newIds].every((id) => selectedNodeIds.has(id))) {
+      // Check if selection actually changed compared to what we last set
+      const isSame = newIds.size === lastIds.size &&
+                     [...newIds].every((id) => lastIds.has(id));
+
+      if (!isSame) {
+        lastSelectionRef.current = newIds;
         setSelectedNodeIds(newIds);
       }
     },
-    [selectedNodeIds, setSelectedNodeIds]
+    [setSelectedNodeIds]
   );
 
   // Handle keyboard shortcuts for selection actions
