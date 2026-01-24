@@ -4,6 +4,9 @@ import type { EndpointNodeData, HttpMethod } from '@/types';
 import { cn } from '@/lib/utils';
 import { METHOD_COLORS } from '@/constants';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useUIStore } from '@/stores/uiStore';
+import { truncateEndpointPath } from '@/utils/displayUtils';
 
 interface EndpointNodeProps {
   data: EndpointNodeData;
@@ -13,6 +16,13 @@ interface EndpointNodeProps {
 export const EndpointNode = memo(function EndpointNode({ data, selected }: EndpointNodeProps) {
   const { endpoint } = data;
   const methodColor = METHOD_COLORS[endpoint.method as HttpMethod];
+  const { endpointPathDisplayMode, compactMode, maxNodeWidth } = useUIStore();
+
+  // Get display path based on current mode
+  const displayPath = compactMode
+    ? truncateEndpointPath(endpoint.path, endpointPathDisplayMode)
+    : endpoint.path;
+  const isPathTruncated = displayPath !== endpoint.path;
 
   return (
     <div
@@ -21,6 +31,7 @@ export const EndpointNode = memo(function EndpointNode({ data, selected }: Endpo
         selected && 'ring-2 ring-primary',
         endpoint.deprecated && 'opacity-60'
       )}
+      style={{ maxWidth: compactMode ? maxNodeWidth : undefined }}
     >
       <Handle type="target" position={Position.Left} className="!bg-primary" />
 
@@ -38,7 +49,18 @@ export const EndpointNode = memo(function EndpointNode({ data, selected }: Endpo
 
       {/* Path and summary */}
       <div className="px-3 py-2">
-        <div className="font-mono text-xs text-foreground break-all">{endpoint.path}</div>
+        {isPathTruncated ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="font-mono text-xs text-foreground truncate cursor-help">{displayPath}</div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-[400px]">
+              <span className="font-mono text-xs break-all">{endpoint.path}</span>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <div className="font-mono text-xs text-foreground break-all">{endpoint.path}</div>
+        )}
         {endpoint.summary && (
           <div className="mt-1 text-xs text-muted-foreground line-clamp-2">{endpoint.summary}</div>
         )}

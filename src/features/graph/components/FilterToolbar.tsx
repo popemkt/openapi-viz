@@ -1,5 +1,14 @@
 import { memo } from 'react';
-import { FilterIcon, XIcon, SearchIcon, BoxIcon, RouteIcon } from 'lucide-react';
+import {
+  FilterIcon,
+  XIcon,
+  SearchIcon,
+  BoxIcon,
+  RouteIcon,
+  Minimize2Icon,
+  Maximize2Icon,
+  SettingsIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -11,11 +20,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useFilterStore, useSpecStore } from '@/stores';
+import { useFilterStore, useSpecStore, useUIStore } from '@/stores';
 import { HTTP_METHODS, METHOD_COLORS } from '@/constants';
 import { cn } from '@/lib/utils';
+import type { DisplayMode } from '@/utils/displayUtils';
 
 export const FilterToolbar = memo(function FilterToolbar() {
   const {
@@ -35,6 +47,15 @@ export const FilterToolbar = memo(function FilterToolbar() {
   } = useFilterStore();
 
   const { parsedSpec } = useSpecStore();
+
+  const {
+    compactMode,
+    toggleCompactMode,
+    schemaNameDisplayMode,
+    setSchemaNameDisplayMode,
+    endpointPathDisplayMode,
+    setEndpointPathDisplayMode,
+  } = useUIStore();
 
   const availableTags = parsedSpec?.tags.map((t) => t.name) || [];
   const activeFilterCount =
@@ -98,6 +119,68 @@ export const FilterToolbar = memo(function FilterToolbar() {
         </TooltipTrigger>
         <TooltipContent>Show Schemas</TooltipContent>
       </Tooltip>
+
+      {/* Separator */}
+      <div className="h-6 w-px bg-border" />
+
+      {/* Compact mode toggle */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Toggle
+            pressed={compactMode}
+            onPressedChange={toggleCompactMode}
+            size="sm"
+            aria-label="Toggle compact mode"
+          >
+            {compactMode ? (
+              <Minimize2Icon className="h-4 w-4" />
+            ) : (
+              <Maximize2Icon className="h-4 w-4" />
+            )}
+          </Toggle>
+        </TooltipTrigger>
+        <TooltipContent>
+          {compactMode ? 'Compact mode (click to expand)' : 'Expanded mode (click to compact)'}
+        </TooltipContent>
+      </Tooltip>
+
+      {/* Display settings dropdown */}
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                <SettingsIcon className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Display settings</TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuLabel className="text-xs">Schema Name Display</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={schemaNameDisplayMode}
+            onValueChange={(value) => setSchemaNameDisplayMode(value as DisplayMode)}
+          >
+            <DropdownMenuRadioItem value="full">Full name</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="medium">Medium (last 2 parts)</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="short">Short (last part only)</DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-xs">Endpoint Path Display</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={endpointPathDisplayMode}
+            onValueChange={(value) => setEndpointPathDisplayMode(value as DisplayMode)}
+          >
+            <DropdownMenuRadioItem value="full">Full path</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="medium">Medium (last 2 segments)</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="short">Short (last segment only)</DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Separator */}
+      <div className="h-6 w-px bg-border" />
 
       {/* Method filter dropdown */}
       <DropdownMenu>

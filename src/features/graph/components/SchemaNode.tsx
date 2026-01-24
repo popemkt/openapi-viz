@@ -15,6 +15,8 @@ import {
   BookOpenIcon,
 } from 'lucide-react';
 import { EDGE_COLORS } from '@/constants/colors';
+import { useUIStore } from '@/stores/uiStore';
+import { truncateSchemaName } from '@/utils/displayUtils';
 
 interface SchemaNodeProps {
   data: SchemaNodeData;
@@ -23,9 +25,16 @@ interface SchemaNodeProps {
 
 export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNodeProps) {
   const { schema, hasDiscriminator, discriminatorValues, compositionType, incomingRefCount, outgoingRefCount } = data;
+  const { schemaNameDisplayMode, compactMode, maxNodeWidth } = useUIStore();
 
   const propertyCount = schema.properties ? Object.keys(schema.properties).length : 0;
   const requiredCount = schema.required?.length || 0;
+
+  // Get display name based on current mode
+  const displayName = compactMode
+    ? truncateSchemaName(schema.name, schemaNameDisplayMode)
+    : schema.name;
+  const isNameTruncated = displayName !== schema.name;
 
   // Detect composition types from schema or from pre-computed compositionType
   const hasAllOf = compositionType === 'allOf' || (schema.allOf && schema.allOf.length > 0);
@@ -42,15 +51,29 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
         'min-w-[160px] rounded-md border bg-card shadow-sm transition-shadow',
         selected && 'ring-2 ring-primary'
       )}
+      style={{ maxWidth: compactMode ? maxNodeWidth : undefined }}
     >
       <Handle type="target" position={Position.Left} className="!bg-slate-500" />
 
       {/* Header */}
       <div className="flex items-center gap-2 rounded-t-md bg-slate-100 px-3 py-2 dark:bg-slate-800">
-        <BoxIcon className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-        <span className="font-mono text-sm font-medium text-slate-700 dark:text-slate-300">
-          {schema.name}
-        </span>
+        <BoxIcon className="h-4 w-4 flex-shrink-0 text-slate-600 dark:text-slate-400" />
+        {isNameTruncated ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="font-mono text-sm font-medium text-slate-700 dark:text-slate-300 truncate cursor-help">
+                {displayName}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[400px]">
+              <span className="font-mono text-xs break-all">{schema.name}</span>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <span className="font-mono text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
+            {displayName}
+          </span>
+        )}
       </div>
 
       {/* Discriminator badge */}

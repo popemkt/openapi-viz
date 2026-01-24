@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { DisplayMode } from '../utils/displayUtils';
 
 export type ViewMode = 'editor' | 'graph' | 'split';
 export type Theme = 'light' | 'dark' | 'system';
@@ -11,12 +12,23 @@ interface UIState {
   detailPanelHeight: number;
   theme: Theme;
 
+  // Graph view display settings
+  schemaNameDisplayMode: DisplayMode;
+  endpointPathDisplayMode: DisplayMode;
+  compactMode: boolean;
+  maxNodeWidth: number;
+
   setViewMode: (mode: ViewMode) => void;
   setSplitPosition: (position: number) => void;
   toggleDetailPanel: () => void;
   setDetailPanelOpen: (open: boolean) => void;
   setDetailPanelHeight: (height: number) => void;
   setTheme: (theme: Theme) => void;
+  setSchemaNameDisplayMode: (mode: DisplayMode) => void;
+  setEndpointPathDisplayMode: (mode: DisplayMode) => void;
+  setCompactMode: (compact: boolean) => void;
+  toggleCompactMode: () => void;
+  setMaxNodeWidth: (width: number) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -27,6 +39,12 @@ export const useUIStore = create<UIState>()(
       detailPanelOpen: false,
       detailPanelHeight: 300,
       theme: 'system',
+
+      // Graph view display settings - default to short mode for compact display
+      schemaNameDisplayMode: 'short',
+      endpointPathDisplayMode: 'short',
+      compactMode: true,
+      maxNodeWidth: 250,
 
       setViewMode: (mode) => set({ viewMode: mode }),
 
@@ -40,6 +58,18 @@ export const useUIStore = create<UIState>()(
       setDetailPanelHeight: (height) => set({ detailPanelHeight: height }),
 
       setTheme: (theme) => set({ theme }),
+
+      setSchemaNameDisplayMode: (mode) => set({ schemaNameDisplayMode: mode }),
+
+      setEndpointPathDisplayMode: (mode) =>
+        set({ endpointPathDisplayMode: mode }),
+
+      setCompactMode: (compact) => set({ compactMode: compact }),
+
+      toggleCompactMode: () =>
+        set((state) => ({ compactMode: !state.compactMode })),
+
+      setMaxNodeWidth: (width) => set({ maxNodeWidth: width }),
     }),
     {
       name: 'openapi-viz-ui',
