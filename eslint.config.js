@@ -44,6 +44,7 @@ export default [
         React: 'readonly',
         alert: 'readonly',
         structuredClone: 'readonly',
+        MessageEvent: 'readonly',
       },
     },
     plugins: {
@@ -53,6 +54,35 @@ export default [
     rules: {
       ...tseslint.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
+    },
+  },
+  // Web Worker files configuration
+  {
+    files: ['**/*.worker.ts'],
+    languageOptions: {
+      parser: tsparser,
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: 'module',
+      },
+      globals: {
+        self: 'readonly',
+        console: 'readonly',
+        MessageEvent: 'readonly',
+        postMessage: 'readonly',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tseslint,
+    },
+    rules: {
+      ...tseslint.configs.recommended.rules,
       '@typescript-eslint/no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },

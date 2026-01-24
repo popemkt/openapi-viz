@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useSpecStore } from '@/stores';
-import { parseSpec } from '@/core/parser';
+import { ParserWorkerClient } from '@/core/parser/workers/parserWorkerClient';
 import { useDebounce } from '@/shared/hooks/useDebounce';
 
 const PARSE_DEBOUNCE_MS = 500;
@@ -8,29 +8,30 @@ const PARSE_DEBOUNCE_MS = 500;
 export function useSpecParser() {
   const { rawText, setParsedSpec, setLoading } = useSpecStore();
   const debouncedText = useDebounce(rawText, PARSE_DEBOUNCE_MS);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Abort any in-progress parsing
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+    const workerClient = ParserWorkerClient.getInstance();
+
+    // Cancel any pending parse request
+    if (requestIdRef.current) {
+      workerClient.cancelPending(requestIdRef.current);
     }
 
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
+    let cancelled = false;
 
     const doParse = async () => {
       setLoading(true);
 
       try {
-        const result = await parseSpec(debouncedText);
+        const result = await workerClient.parse(debouncedText);
 
-        // Check if we were aborted
-        if (abortController.signal.aborted) return;
+        // Check if we were cancelled
+        if (cancelled) return;
 
         setParsedSpec(result.spec, result.sourceMap, result.errors);
       } catch (error) {
-        if (abortController.signal.aborted) return;
+        if (cancelled) return;
 
         setParsedSpec(null, null, [
           {
@@ -39,7 +40,7 @@ export function useSpecParser() {
           },
         ]);
       } finally {
-        if (!abortController.signal.aborted) {
+        if (!cancelled) {
           setLoading(false);
         }
       }
@@ -48,7 +49,8 @@ export function useSpecParser() {
     doParse();
 
     return () => {
-      abortController.abort();
+      cancelled = true;
+      workerClient.cancelPending();
     };
   }, [debouncedText, setParsedSpec, setLoading]);
 }
