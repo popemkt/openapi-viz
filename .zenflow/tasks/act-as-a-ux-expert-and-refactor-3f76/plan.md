@@ -18,47 +18,143 @@ Do not make assumptions on important decisions — get clarification first.
 
 ## Workflow Steps
 
-### [ ] Step: Technical Specification
+### [x] Step: Technical Specification
+<!-- chat-id: ddbb8843-9bee-4301-a9d5-5772afe27f8b -->
 
-Assess the task's difficulty, as underestimating it leads to poor outcomes.
-- easy: Straightforward implementation, trivial bug fix or feature
-- medium: Moderate complexity, some edge cases or caveats to consider
-- hard: Complex logic, many caveats, architectural considerations, or high-risk changes
+**Completed**: Created comprehensive UX audit with findings documented in `spec.md`:
+- Identified FilterToolbar overwhelm (15+ controls, no hierarchy)
+- Identified BulkActionsToolbar positioning and clarity issues
+- Identified top toolbar density problems
+- Defined UX design principles (progressive disclosure, visual hierarchy)
+- Created detailed implementation approach with 4 phases
+- Mapped all files to modify
 
-Create a technical specification for the task that is appropriate for the complexity level:
-- Review the existing codebase architecture and identify reusable components.
-- Define the implementation approach based on established patterns in the project.
-- Identify all source code files that will be created or modified.
-- Define any necessary data model, API, or interface changes.
-- Describe verification steps using the project's test and lint commands.
-
-Save the output to `{@artifacts_path}/spec.md` with:
-- Technical context (language, dependencies)
-- Implementation approach
-- Source code structure changes
-- Data model / API / interface changes
-- Verification approach
-
-If the task is complex enough, create a detailed implementation plan based on `{@artifacts_path}/spec.md`:
-- Break down the work into concrete tasks (incrementable, testable milestones)
-- Each task should reference relevant contracts and include verification steps
-- Replace the Implementation step below with the planned tasks
-
-Rule of thumb for step size: each step should represent a coherent unit of work (e.g., implement a component, add an API endpoint, write tests for a module). Avoid steps that are too granular (single function).
-
-Save to `{@artifacts_path}/plan.md`. If the feature is trivial and doesn't warrant this breakdown, keep the Implementation step below as is.
+**Difficulty Assessment**: Medium-Hard
 
 ---
 
-### [ ] Step: Implementation
+### [ ] Step: Create Segmented Control Component
 
-Implement the task according to the technical specification and general engineering best practices.
+Create a reusable segmented control component as an alternative to icon-only toggles.
 
-1. Break the task into steps where possible.
-2. Implement the required changes in the codebase.
-3. Add and run relevant tests and linters.
-4. Perform basic manual verification if applicable.
-5. After completion, write a report to `{@artifacts_path}/report.md` describing:
-   - What was implemented
-   - How the solution was tested
-   - The biggest issues or challenges encountered
+**Files to create:**
+- `src/components/ui/segmented-control.tsx`
+
+**Requirements:**
+- Support for 2-3 options
+- Clear visual indication of selected state
+- Labels (not just icons)
+- Consistent with existing Radix UI + Tailwind patterns
+- Support for icon + label combinations
+
+**Verification:**
+- Component builds without errors
+- Component can be imported and used in FilterToolbar
+
+---
+
+### [ ] Step: Refactor FilterToolbar Layout
+
+Restructure the FilterToolbar from a flat horizontal layout to organized sections.
+
+**Files to modify:**
+- `src/features/graph/components/FilterToolbar.tsx`
+
+**Changes:**
+1. Reorganize into 3 logical sections:
+   - Search section (search input + path pattern with label)
+   - Node visibility section (Endpoints/Schemas as segmented control)
+   - Filter mode section (Highlight/Hide as segmented control)
+2. Consolidate display settings:
+   - Create "View" dropdown combining compact level + display modes
+   - Create "Layout" dropdown with direction + spacing
+3. Clean up HTTP Methods and Tags dropdowns (add labels)
+4. Remove duplicate hidden nodes indicator (defer to BulkActionsToolbar)
+5. Simplify active filters indicator
+
+**Verification:**
+- All existing filter functionality works
+- Controls are labeled and understandable without tooltips
+- Visual grouping is clear
+
+---
+
+### [ ] Step: Improve BulkActionsToolbar
+
+Improve clarity and reduce duplication in the bulk actions toolbar.
+
+**Files to modify:**
+- `src/features/graph/components/BulkActionsToolbar.tsx`
+
+**Changes:**
+1. Add text labels to action buttons (Hide, Focus, Expand, Clear)
+2. Consolidate as the single location for hidden nodes indicator
+3. Improve visual design of action buttons
+4. Consider repositioning if overlap issues persist
+
+**Verification:**
+- All selection actions work correctly
+- Hidden nodes indicator is clear and functional
+- Keyboard shortcuts still work (Del, Esc)
+
+---
+
+### [ ] Step: Polish Top Toolbar
+
+Improve the header toolbar with clearer labels and reduced density.
+
+**Files to modify:**
+- `src/app/Layout.tsx`
+
+**Changes:**
+1. Add text labels to file operations (New, Open, Save)
+2. Create labeled "Export" dropdown button
+3. Simplify parse status display (icon + hover for details)
+4. Add labels to view mode toggle (Editor, Split, Graph)
+
+**Verification:**
+- All file operations work correctly
+- Export functionality preserved
+- View mode switching works
+- Parse status information accessible
+
+---
+
+### [ ] Step: Final Testing and Verification
+
+Comprehensive testing of all changes.
+
+**Verification steps:**
+1. Run `npm run build` - no errors
+2. Run `npm run lint` - no warnings
+3. Run `npm run test` - all tests pass
+4. Manual testing:
+   - Filter by search, path pattern
+   - Toggle node types
+   - Change filter display mode
+   - Adjust compact level and display modes
+   - Change layout direction and spacing
+   - Filter by HTTP methods and tags
+   - Select nodes and use bulk actions
+   - Hide/unhide nodes
+   - File operations (new, open, save)
+   - Export operations
+   - View mode switching
+   - Theme switching
+5. Verify no regression in functionality
+6. Write report to `report.md`
+
+---
+
+### [ ] Step: Implementation Report
+
+Write final implementation report.
+
+**File to create:**
+- `.zenflow/tasks/act-as-a-ux-expert-and-refactor-3f76/report.md`
+
+**Contents:**
+- What was implemented
+- How the solution was tested
+- Before/after comparison
+- Challenges encountered
