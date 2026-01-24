@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useEffect, useRef } from 'react';
+import { useCallback, useMemo, useEffect, useRef, useDeferredValue } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -122,23 +122,29 @@ function GraphCanvasInner() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedNodeIds, hideNodes, selectNode]);
 
-  // Apply selection styling to nodes
+  // Defer selection-dependent computations to avoid stutter during marquee drag
+  // React will render with stale selection first (keeping UI responsive),
+  // then re-render with updated selection when idle
+  const deferredSelectedNodeIds = useDeferredValue(selectedNodeIds);
+
+  // Apply selection styling to nodes - uses deferred value for smooth dragging
   const nodesWithSelection = useMemo(() => {
     return filteredNodes.map((node) => ({
       ...node,
-      selected: selectedNodeIds.has(node.id),
+      selected: deferredSelectedNodeIds.has(node.id),
     }));
-  }, [filteredNodes, selectedNodeIds]);
+  }, [filteredNodes, deferredSelectedNodeIds]);
 
   // Apply animated dashed styling to edges connected to selected nodes
+  // Uses deferred selection to avoid recalculating on every frame during drag
   const edgesWithAnimation = useMemo(() => {
-    if (selectedNodeIds.size === 0) {
+    if (deferredSelectedNodeIds.size === 0) {
       return filteredEdges;
     }
 
     return filteredEdges.map((edge) => {
       const isConnectedToSelected =
-        selectedNodeIds.has(edge.source) || selectedNodeIds.has(edge.target);
+        deferredSelectedNodeIds.has(edge.source) || deferredSelectedNodeIds.has(edge.target);
 
       if (isConnectedToSelected) {
         return {
@@ -153,7 +159,7 @@ function GraphCanvasInner() {
       }
       return edge;
     });
-  }, [filteredEdges, selectedNodeIds]);
+  }, [filteredEdges, deferredSelectedNodeIds]);
 
   // Get color for minimap nodes based on node type
   const getMinimapNodeColor = useCallback((node: Node) => {

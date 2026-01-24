@@ -10,6 +10,8 @@ import { useGraphStore } from '@/stores/graphStore';
  * are highlighted in the editor with a visible background and left border.
  *
  * Uses Monaco's deltaDecorations API for efficient decoration updates.
+ * Debounced to prevent performance issues during rapid selection changes
+ * (e.g., marquee drag selection).
  */
 export function useSourceHighlight() {
   const editor = useEditorStore((state) => state.editor);
@@ -18,49 +20,67 @@ export function useSourceHighlight() {
 
   // Track decoration IDs for cleanup
   const decorationsRef = useRef<string[]>([]);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!editor || !sourceMap) {
       return;
     }
 
-    // Collect ranges for all selected nodes
-    const ranges: monaco.IRange[] = [];
-
-    for (const nodeId of selectedNodeIds) {
-      const location = sourceMap.nodeToLocation.get(nodeId);
-      if (location) {
-        ranges.push({
-          startLineNumber: location.startLine,
-          startColumn: location.startColumn,
-          endLineNumber: location.endLine,
-          endColumn: location.endColumn,
-        });
-      }
+    // Clear any pending update
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
 
-    // Apply decorations - deltaDecorations handles add/update/remove efficiently
-    decorationsRef.current = editor.deltaDecorations(
-      decorationsRef.current,
-      ranges.map((range) => ({
-        range,
-        options: {
-          className: 'source-highlight-selection',
-          isWholeLine: false,
-          overviewRuler: {
-            color: 'hsl(var(--primary))',
-            position: 2, // monaco.editor.OverviewRulerLane.Center
-          },
-        },
-      }))
-    );
+    // Debounce decoration updates to avoid performance issues during marquee drag
+    timeoutRef.current = setTimeout(() => {
+      // Collect ranges for all selected nodes
+      const ranges: monaco.IRange[] = [];
 
-    // Cleanup function - remove all decorations when unmounting or when dependencies change
+      for (const nodeId of selectedNodeIds) {
+        const location = sourceMap.nodeToLocation.get(nodeId);
+        if (location) {
+          ranges.push({
+            startLineNumber: location.startLine,
+            startColumn: location.startColumn,
+            endLineNumber: location.endLine,
+            endColumn: location.endColumn,
+          });
+        }
+      }
+
+      // Apply decorations - deltaDecorations handles add/update/remove efficiently
+      decorationsRef.current = editor.deltaDecorations(
+        decorationsRef.current,
+        ranges.map((range) => ({
+          range,
+          options: {
+            className: 'source-highlight-selection',
+            isWholeLine: false,
+            overviewRuler: {
+              color: 'hsl(var(--primary))',
+              position: 2, // monaco.editor.OverviewRulerLane.Center
+            },
+          },
+        }))
+      );
+    }, 100); // 100ms debounce
+
+    // Cleanup function
     return () => {
-      if (editor && decorationsRef.current.length > 0) {
-        // Clear decorations by passing empty array as new decorations
-        decorationsRef.current = editor.deltaDecorations(decorationsRef.current, []);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
     };
   }, [editor, sourceMap, selectedNodeIds]);
+
+  // Cleanup decorations on unmount
+  useEffect(() => {
+    return () => {
+      const editorInstance = useEditorStore.getState().editor;
+      if (editorInstance && decorationsRef.current.length > 0) {
+        editorInstance.deltaDecorations(decorationsRef.current, []);
+      }
+    };
+  }, []);
 }
