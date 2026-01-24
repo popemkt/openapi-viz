@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState, useEffect, useRef } from 'react';
 import {
   XIcon,
   SearchIcon,
@@ -16,6 +16,7 @@ import {
   ArrowUpIcon,
   SlidersHorizontalIcon,
   LayoutIcon,
+  FilterIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -164,98 +165,137 @@ export const FilterToolbar = memo(function FilterToolbar() {
     BT: 'Bottom to Top',
   };
 
-  return (
-    <div className="flex items-center gap-2 border-b border-border bg-card/50 px-3 py-2">
-      {/* === SECTION 1: Search & Path Filter === */}
-      <div className="flex items-center gap-2">
-        {/* Search input */}
-        <div className="relative flex-1 min-w-[200px] max-w-xs">
-          <SearchIcon className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search endpoints & schemas..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-8 pl-8 text-sm"
-          />
-        </div>
+  // Track if we need compact mode based on container width
+  const [isCompact, setIsCompact] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-        {/* Path pattern with label */}
+  // Use ResizeObserver to detect when we need compact mode
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        // Switch to compact mode when width < 700px
+        setIsCompact(entry.contentRect.width < 700);
+      }
+    });
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  // Compact mode: combine Methods + Tags into a single "Filters" dropdown
+  const hasMethodOrTagFilters = methodFilters.length > 0 || tagFilters.length > 0;
+
+  return (
+    <div ref={containerRef} className="flex flex-wrap items-center gap-x-2 gap-y-1.5 border-b border-border bg-card/50 px-3 py-2">
+      {/* === SECTION 1: Search (always visible, responsive width) === */}
+      <div className="relative min-w-[140px] flex-1 max-w-[250px]">
+        <SearchIcon className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder={isCompact ? "Search..." : "Search endpoints & schemas..."}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="h-8 pl-8 text-sm"
+        />
+      </div>
+
+      {/* Path pattern - hidden in very compact mode, shown in "More" dropdown */}
+      {!isCompact && (
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-muted-foreground whitespace-nowrap">Path:</span>
           <Input
             placeholder="/api/*"
             value={pathPattern}
             onChange={(e) => setPathPattern(e.target.value)}
-            className="h-8 w-[120px] text-sm font-mono"
+            className="h-8 w-[100px] text-sm font-mono"
             title="Path pattern (supports * wildcards)"
           />
         </div>
-      </div>
+      )}
 
       {/* Separator */}
       <div className="h-6 w-px bg-border" />
 
       {/* === SECTION 2: Node Visibility & Filter Mode === */}
-      <div className="flex items-center gap-2">
-        {/* Node type visibility - segmented control */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground whitespace-nowrap">Show:</span>
-          <SegmentedControl
-            size="sm"
-            value={nodeVisibility}
-            onValueChange={handleNodeVisibilityChange}
-            options={nodeVisibilityOptions}
-          />
-        </div>
-
-        {/* Filter mode - segmented control */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground whitespace-nowrap">Filter:</span>
-          <SegmentedControl
-            size="sm"
-            value={filterDisplayMode}
-            onValueChange={setFilterDisplayMode}
-            options={filterModeOptions}
-          />
-        </div>
-
-        {/* Select Highlighted button - visible in highlight mode with active filters */}
-        {showSelectHighlighted && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
+      {/* In compact mode: icon-only segmented controls */}
+      <div className="flex items-center gap-1.5">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1">
+              {!isCompact && <span className="text-xs text-muted-foreground whitespace-nowrap">Show:</span>}
+              <SegmentedControl
                 size="sm"
-                className="h-8 gap-1.5"
-                onClick={handleSelectHighlighted}
-              >
-                <MousePointer2Icon className="h-4 w-4" />
-                <span className="text-xs">Select</span>
-                <Badge variant="secondary" className="h-5 px-1.5 text-xs">
-                  {matchingNodeIds.size}
-                </Badge>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              Select {matchingNodeIds.size} highlighted node{matchingNodeIds.size !== 1 ? 's' : ''}
-            </TooltipContent>
-          </Tooltip>
-        )}
+                value={nodeVisibility}
+                onValueChange={handleNodeVisibilityChange}
+                options={nodeVisibilityOptions}
+                iconOnly={isCompact}
+              />
+            </div>
+          </TooltipTrigger>
+          {isCompact && <TooltipContent>Node visibility: {nodeVisibility}</TooltipContent>}
+        </Tooltip>
       </div>
+
+      <div className="flex items-center gap-1.5">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1">
+              {!isCompact && <span className="text-xs text-muted-foreground whitespace-nowrap">Filter:</span>}
+              <SegmentedControl
+                size="sm"
+                value={filterDisplayMode}
+                onValueChange={setFilterDisplayMode}
+                options={filterModeOptions}
+                iconOnly={isCompact}
+              />
+            </div>
+          </TooltipTrigger>
+          {isCompact && <TooltipContent>Filter mode: {filterDisplayMode}</TooltipContent>}
+        </Tooltip>
+      </div>
+
+      {/* Select Highlighted button - compact in narrow mode */}
+      {showSelectHighlighted && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1"
+              onClick={handleSelectHighlighted}
+            >
+              <MousePointer2Icon className="h-4 w-4" />
+              {!isCompact && <span className="text-xs">Select</span>}
+              <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                {matchingNodeIds.size}
+              </Badge>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            Select {matchingNodeIds.size} highlighted node{matchingNodeIds.size !== 1 ? 's' : ''}
+          </TooltipContent>
+        </Tooltip>
+      )}
 
       {/* Separator */}
       <div className="h-6 w-px bg-border" />
 
-      {/* === SECTION 3: View & Layout Settings === */}
+      {/* === SECTION 3: View & Layout Settings (always dropdowns) === */}
       <div className="flex items-center gap-1">
-        {/* View settings dropdown - combines compact level and display settings */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 gap-1.5">
-              <SlidersHorizontalIcon className="h-4 w-4" />
-              <span className="text-xs">View</span>
-            </Button>
-          </DropdownMenuTrigger>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1.5">
+                  <SlidersHorizontalIcon className="h-4 w-4" />
+                  {!isCompact && <span className="text-xs">View</span>}
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            {isCompact && <TooltipContent>View settings</TooltipContent>}
+          </Tooltip>
           <DropdownMenuContent align="start" className="w-64">
             <DropdownMenuLabel className="text-xs">Detail Level</DropdownMenuLabel>
             <div className="px-2 py-1.5">
@@ -301,14 +341,18 @@ export const FilterToolbar = memo(function FilterToolbar() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Layout settings dropdown */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 gap-1.5">
-              <LayoutIcon className="h-4 w-4" />
-              <span className="text-xs">Layout</span>
-            </Button>
-          </DropdownMenuTrigger>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1.5">
+                  <LayoutIcon className="h-4 w-4" />
+                  {!isCompact && <span className="text-xs">Layout</span>}
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            {isCompact && <TooltipContent>Layout settings</TooltipContent>}
+          </Tooltip>
           <DropdownMenuContent align="start" className="w-56">
             <DropdownMenuLabel className="text-xs">Direction</DropdownMenuLabel>
             <DropdownMenuRadioGroup
@@ -354,67 +398,129 @@ export const FilterToolbar = memo(function FilterToolbar() {
       {/* Separator */}
       <div className="h-6 w-px bg-border" />
 
-      {/* === SECTION 4: HTTP Methods & Tags Filters === */}
+      {/* === SECTION 4: Filters (Methods, Tags, Path in compact mode) === */}
       <div className="flex items-center gap-1">
-        {/* Method filter dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 gap-1">
-              <span className="text-xs">Methods</span>
-              {methodFilters.length > 0 && (
-                <Badge variant="secondary" className="h-5 px-1.5 text-xs">
-                  {methodFilters.length}
-                </Badge>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuLabel className="text-xs">HTTP Methods</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {HTTP_METHODS.map((method) => {
-              const colors = METHOD_COLORS[method];
-              return (
-                <DropdownMenuCheckboxItem
-                  key={method}
-                  checked={methodFilters.includes(method)}
-                  onCheckedChange={() => toggleMethod(method)}
-                >
-                  <span className={cn('uppercase font-mono text-xs', colors.text)}>
-                    {method}
-                  </span>
-                </DropdownMenuCheckboxItem>
-              );
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Tags filter dropdown */}
-        {availableTags.length > 0 && (
+        {/* Compact mode: Combined "Filters" dropdown with Path, Methods, Tags */}
+        {isCompact ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8 gap-1">
-                <span className="text-xs">Tags</span>
-                {tagFilters.length > 0 && (
+                <FilterIcon className="h-4 w-4" />
+                <span className="text-xs">Filters</span>
+                {(hasMethodOrTagFilters || pathPattern) && (
                   <Badge variant="secondary" className="h-5 px-1.5 text-xs">
-                    {tagFilters.length}
+                    {methodFilters.length + tagFilters.length + (pathPattern ? 1 : 0)}
                   </Badge>
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
-              <DropdownMenuLabel className="text-xs">Tags</DropdownMenuLabel>
+            <DropdownMenuContent align="start" className="w-64">
+              {/* Path pattern in dropdown for compact mode */}
+              <DropdownMenuLabel className="text-xs">Path Pattern</DropdownMenuLabel>
+              <div className="px-2 py-1.5">
+                <Input
+                  placeholder="/api/*"
+                  value={pathPattern}
+                  onChange={(e) => setPathPattern(e.target.value)}
+                  className="h-8 text-sm font-mono"
+                  title="Path pattern (supports * wildcards)"
+                />
+              </div>
               <DropdownMenuSeparator />
-              {availableTags.map((tag) => (
-                <DropdownMenuCheckboxItem
-                  key={tag}
-                  checked={tagFilters.includes(tag)}
-                  onCheckedChange={() => toggleTag(tag)}
-                >
-                  {tag}
-                </DropdownMenuCheckboxItem>
-              ))}
+              <DropdownMenuLabel className="text-xs">HTTP Methods</DropdownMenuLabel>
+              {HTTP_METHODS.map((method) => {
+                const colors = METHOD_COLORS[method];
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={method}
+                    checked={methodFilters.includes(method)}
+                    onCheckedChange={() => toggleMethod(method)}
+                  >
+                    <span className={cn('uppercase font-mono text-xs', colors.text)}>
+                      {method}
+                    </span>
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
+              {availableTags.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs">Tags</DropdownMenuLabel>
+                  {availableTags.map((tag) => (
+                    <DropdownMenuCheckboxItem
+                      key={tag}
+                      checked={tagFilters.includes(tag)}
+                      onCheckedChange={() => toggleTag(tag)}
+                    >
+                      {tag}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
+        ) : (
+          /* Non-compact mode: Separate Methods and Tags dropdowns */
+          <>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1">
+                  <span className="text-xs">Methods</span>
+                  {methodFilters.length > 0 && (
+                    <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                      {methodFilters.length}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuLabel className="text-xs">HTTP Methods</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {HTTP_METHODS.map((method) => {
+                  const colors = METHOD_COLORS[method];
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={method}
+                      checked={methodFilters.includes(method)}
+                      onCheckedChange={() => toggleMethod(method)}
+                    >
+                      <span className={cn('uppercase font-mono text-xs', colors.text)}>
+                        {method}
+                      </span>
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {availableTags.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 gap-1">
+                    <span className="text-xs">Tags</span>
+                    {tagFilters.length > 0 && (
+                      <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                        {tagFilters.length}
+                      </Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
+                  <DropdownMenuLabel className="text-xs">Tags</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {availableTags.map((tag) => (
+                    <DropdownMenuCheckboxItem
+                      key={tag}
+                      checked={tagFilters.includes(tag)}
+                      onCheckedChange={() => toggleTag(tag)}
+                    >
+                      {tag}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </>
         )}
       </div>
 
@@ -425,11 +531,12 @@ export const FilterToolbar = memo(function FilterToolbar() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+              className="h-8 gap-1 text-muted-foreground hover:text-foreground"
               onClick={resetFilters}
             >
               <XIcon className="h-4 w-4" />
-              <span className="text-xs">Clear ({activeFilterCount})</span>
+              {!isCompact && <span className="text-xs">Clear</span>}
+              <span className="text-xs">({activeFilterCount})</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>Clear all filters</TooltipContent>

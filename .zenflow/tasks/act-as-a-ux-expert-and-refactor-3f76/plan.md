@@ -243,3 +243,44 @@ Write final implementation report.
 - Before/after comparisons with visual layouts
 - Challenges encountered and solutions
 - Success criteria verification table
+
+### [x] Step: After impl fixes
+<!-- chat-id: 89ce3d5f-2903-45f8-b3aa-2399872c5b60 -->
+<!-- agent: claude-code -->
+
+It looks like the tool bar now eventhough clearer in intent, becomes too long for the dual pane layout. Some of them are cutoff, think of a good solution
+
+**Completed**: Implemented responsive FilterToolbar with adaptive compact mode:
+
+**Solution approach:**
+- Used `ResizeObserver` to detect container width changes
+- Switch to compact mode when toolbar width < 700px
+- Allows toolbar to adapt based on actual available space (not viewport)
+
+**Compact mode changes (< 700px width):**
+1. **Search input**: Shorter placeholder "Search..." instead of "Search endpoints & schemas..."
+2. **Path pattern**: Hidden from main toolbar, moved into "Filters" dropdown
+3. **Node visibility segmented control**: Icon-only mode (tooltips show state)
+4. **Filter mode segmented control**: Icon-only mode (tooltips show state)
+5. **View/Layout buttons**: Icon-only (no text labels)
+6. **Combined "Filters" dropdown**: Merges Path pattern, HTTP Methods, and Tags into single dropdown
+7. **Clear button**: Shows "(N)" count only, no "Clear" text
+
+**Non-compact mode (>= 700px width):**
+- Full labels on all controls
+- Separate Methods and Tags dropdowns
+- Path pattern visible inline
+
+**Files modified:**
+- `src/features/graph/components/FilterToolbar.tsx` - Added responsive logic
+- `eslint.config.js` - Added `HTMLDivElement` and `ResizeObserver` globals
+
+**Verification:**
+- Build passes (`npm run build`)
+- Lint passes (`npm run lint`)
+- All 158 tests pass (`npm run test`)
+- Manual testing via Playwright:
+  - Full-width Graph view shows non-compact mode
+  - Split view (50% width) shows compact mode with icon-only controls
+  - Filters dropdown works with Path/Methods/Tags combined
+  - Responsive transition works when switching between views
