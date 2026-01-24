@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useFilterStore } from '@/stores';
+import { useFilterStore, useGraphStore } from '@/stores';
 import type { GraphNode, GraphEdge, EndpointNodeData, SchemaNodeData } from '@/types';
 
 function matchPathPattern(path: string, pattern: string): boolean {
@@ -41,10 +41,22 @@ export function useFilteredGraph(
     filterDisplayMode,
   } = useFilterStore();
 
+  const { hiddenNodeIds } = useGraphStore();
+
   return useMemo(() => {
     const matchingNodeIds = new Set<string>();
 
     const filteredNodes = nodes.map((node) => {
+      // Check if manually hidden first
+      const isManuallyHidden = hiddenNodeIds.has(node.id);
+      if (isManuallyHidden) {
+        return {
+          ...node,
+          data: { ...node.data, visible: false, dimmed: false },
+          hidden: true,
+        };
+      }
+
       let matchesFilter = true;
 
       if (node.type === 'endpoint') {
@@ -161,5 +173,5 @@ export function useFilteredGraph(
     });
 
     return { filteredNodes, filteredEdges };
-  }, [nodes, edges, showEndpoints, showSchemas, methodFilters, tagFilters, pathPattern, searchQuery, filterDisplayMode]);
+  }, [nodes, edges, showEndpoints, showSchemas, methodFilters, tagFilters, pathPattern, searchQuery, filterDisplayMode, hiddenNodeIds]);
 }

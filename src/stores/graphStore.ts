@@ -7,6 +7,8 @@ interface GraphState {
   layout: LayoutState;
   selectedNodeIds: Set<string>;
   hoveredNodeId: string | null;
+  /** Manually hidden node IDs (hidden via Delete key) */
+  hiddenNodeIds: Set<string>;
 
   setNodes: (nodes: GraphNode[]) => void;
   setEdges: (edges: GraphEdge[]) => void;
@@ -15,6 +17,12 @@ interface GraphState {
   hoverNode: (id: string | null) => void;
   updateNodePosition: (id: string, position: { x: number; y: number }) => void;
   setLayout: (layout: Partial<LayoutState>) => void;
+  /** Hide the specified node IDs manually */
+  hideNodes: (ids: string[]) => void;
+  /** Show (unhide) the specified node IDs */
+  showNodes: (ids: string[]) => void;
+  /** Show all manually hidden nodes */
+  showAllHiddenNodes: () => void;
   reset: () => void;
 }
 
@@ -30,6 +38,7 @@ export const useGraphStore = create<GraphState>((set) => ({
   layout: initialLayout,
   selectedNodeIds: new Set<string>(),
   hoveredNodeId: null,
+  hiddenNodeIds: new Set<string>(),
 
   setNodes: (nodes) => set({ nodes }),
 
@@ -73,6 +82,25 @@ export const useGraphStore = create<GraphState>((set) => ({
       layout: { ...state.layout, ...layout },
     })),
 
+  hideNodes: (ids) =>
+    set((state) => {
+      const newHidden = new Set(state.hiddenNodeIds);
+      ids.forEach((id) => newHidden.add(id));
+      // Clear selection for hidden nodes
+      const newSelected = new Set(state.selectedNodeIds);
+      ids.forEach((id) => newSelected.delete(id));
+      return { hiddenNodeIds: newHidden, selectedNodeIds: newSelected };
+    }),
+
+  showNodes: (ids) =>
+    set((state) => {
+      const newHidden = new Set(state.hiddenNodeIds);
+      ids.forEach((id) => newHidden.delete(id));
+      return { hiddenNodeIds: newHidden };
+    }),
+
+  showAllHiddenNodes: () => set({ hiddenNodeIds: new Set<string>() }),
+
   reset: () =>
     set({
       nodes: [],
@@ -80,5 +108,6 @@ export const useGraphStore = create<GraphState>((set) => ({
       layout: initialLayout,
       selectedNodeIds: new Set<string>(),
       hoveredNodeId: null,
+      hiddenNodeIds: new Set<string>(),
     }),
 }));

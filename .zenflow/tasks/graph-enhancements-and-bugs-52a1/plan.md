@@ -211,3 +211,27 @@ Write completion report to `{@artifacts_path}/report.md` describing:
 - The biggest issues or challenges encountered
 
 **Completed**: Report written to `report.md` with full details on all 6 issues implemented, testing approach, and challenges encountered.
+
+### [x] Step: Ability to hide by pressing delete
+<!-- chat-id: 33dc851b-11b6-4bfc-bbd5-4d1ded83018c -->
+<!-- agent: claude-code -->
+
+**Goal**: Allow users to hide selected nodes by pressing Delete/Backspace
+
+**UX Design**:
+- Delete/Backspace key hides all currently selected nodes
+- Hidden nodes are tracked separately from filter-based hiding (manual override)
+- A "Show hidden" button appears in the toolbar when nodes are hidden
+- Button shows count of hidden nodes and restores all on click
+- Tooltip explains the Delete shortcut for discoverability
+
+**Files Modified**:
+- `src/stores/graphStore.ts` - Added `hiddenNodeIds` Set and `hideNodes`, `showNodes`, `showAllHiddenNodes` actions
+- `src/features/graph/components/GraphCanvas.tsx` - Added keyboard handler for Delete/Backspace
+- `src/features/graph/hooks/useFilteredGraph.ts` - Integrated manual hiding with filter logic
+- `src/features/graph/components/FilterToolbar.tsx` - Added "Show hidden" button with count badge
+
+**Verification**:
+- `pnpm typecheck`: Passed
+- `pnpm lint`: Passed
+- `pnpm test`: All 132 tests passed

@@ -1,6 +1,7 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
 import {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   Controls,
   MiniMap,
@@ -24,8 +25,8 @@ const nodeTypes: Record<string, any> = {
   schema: SchemaNode,
 };
 
-export function GraphCanvas() {
-  const { nodes: storeNodes, edges: storeEdges, selectNode, selectedNodeIds, setNodes } = useGraphStore();
+function GraphCanvasInner() {
+  const { nodes: storeNodes, edges: storeEdges, selectNode, selectedNodeIds, setNodes, hideNodes } = useGraphStore();
 
   // Apply filters to nodes and edges
   const { filteredNodes, filteredEdges } = useFilteredGraph(storeNodes, storeEdges);
@@ -53,6 +54,25 @@ export function GraphCanvas() {
     },
     [storeNodes, setNodes]
   );
+
+  // Handle Delete/Backspace key to hide selected nodes
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle Delete or Backspace when nodes are selected
+      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedNodeIds.size > 0) {
+        // Don't trigger if user is typing in an input
+        const target = event.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+          return;
+        }
+        event.preventDefault();
+        hideNodes(Array.from(selectedNodeIds));
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selectedNodeIds, hideNodes]);
 
   // Apply selection styling to nodes
   const nodesWithSelection = useMemo(() => {
@@ -131,5 +151,13 @@ export function GraphCanvas() {
         </ReactFlow>
       </div>
     </div>
+  );
+}
+
+export function GraphCanvas() {
+  return (
+    <ReactFlowProvider>
+      <GraphCanvasInner />
+    </ReactFlowProvider>
   );
 }

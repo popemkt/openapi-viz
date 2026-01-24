@@ -11,6 +11,7 @@ import {
   SettingsIcon,
   EyeOffIcon,
   HighlighterIcon,
+  EyeIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +28,7 @@ import {
   DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useFilterStore, useSpecStore, useUIStore } from '@/stores';
+import { useFilterStore, useSpecStore, useUIStore, useGraphStore } from '@/stores';
 import { HTTP_METHODS, METHOD_COLORS } from '@/constants';
 import { cn } from '@/lib/utils';
 import type { DisplayMode } from '@/utils/displayUtils';
@@ -61,6 +62,9 @@ export const FilterToolbar = memo(function FilterToolbar() {
     endpointPathDisplayMode,
     setEndpointPathDisplayMode,
   } = useUIStore();
+
+  const { hiddenNodeIds, showAllHiddenNodes } = useGraphStore();
+  const hiddenCount = hiddenNodeIds.size;
 
   const availableTags = parsedSpec?.tags.map((t) => t.name) || [];
   const activeFilterCount =
@@ -270,6 +274,26 @@ export const FilterToolbar = memo(function FilterToolbar() {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+      )}
+
+      {/* Show hidden nodes button */}
+      {hiddenCount > 0 && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1"
+              onClick={showAllHiddenNodes}
+            >
+              <EyeIcon className="h-4 w-4" />
+              <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                {hiddenCount}
+              </Badge>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Show {hiddenCount} hidden node{hiddenCount > 1 ? 's' : ''} (press Del to hide selected)</TooltipContent>
+        </Tooltip>
       )}
 
       {/* Active filters indicator and reset */}
