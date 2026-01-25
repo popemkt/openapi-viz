@@ -8,11 +8,13 @@ import {
   BackgroundVariant,
   SelectionMode,
   applyNodeChanges,
+  useUpdateNodeInternals,
   type Node,
   type NodeChange,
   type OnSelectionChangeParams,
 } from '@xyflow/react';
 import { useGraphStore } from '@/stores';
+import { useUIStore } from '@/stores/uiStore';
 import type { GraphNode, EndpointNodeData } from '@/types/graph';
 import type { HttpMethod } from '@/types';
 import { METHOD_HEX_COLORS, SCHEMA_HEX_COLOR } from '@/constants';
@@ -30,7 +32,17 @@ const nodeTypes: Record<string, any> = {
 };
 
 function GraphCanvasInner() {
-  const { nodes: storeNodes, edges: storeEdges, selectNode, selectedNodeIds, setNodes, hideNodes, setSelectedNodeIds } = useGraphStore();
+  const {
+    nodes: storeNodes,
+    edges: storeEdges,
+    selectNode,
+    selectedNodeIds,
+    setNodes,
+    hideNodes,
+    setSelectedNodeIds,
+  } = useGraphStore();
+  const { layoutDirection } = useUIStore();
+  const updateNodeInternals = useUpdateNodeInternals();
 
   // Track the last selection we set to prevent infinite loops
   // When we update selection from onSelectionChange, React Flow will fire onSelectionChange again
@@ -47,6 +59,19 @@ function GraphCanvasInner() {
 
   // Sync selection to Monaco editor highlighting
   useSourceHighlight();
+
+  // Track previous layout direction to detect actual changes
+  const prevLayoutDirectionRef = useRef(layoutDirection);
+
+  // Update node internals when layout direction changes to recalculate edge paths
+  useEffect(() => {
+    if (prevLayoutDirectionRef.current !== layoutDirection) {
+      prevLayoutDirectionRef.current = layoutDirection;
+      // Update all node internals to force edge path recalculation
+      const nodeIds = storeNodes.map((n) => n.id);
+      nodeIds.forEach((id) => updateNodeInternals(id));
+    }
+  }, [layoutDirection, storeNodes, updateNodeInternals]);
 
   const handleNodeClick = useCallback(
     (event: React.MouseEvent, node: Node) => {
@@ -85,8 +110,7 @@ function GraphCanvasInner() {
       const lastIds = lastSelectionRef.current;
 
       // Check if selection actually changed compared to what we last set
-      const isSame = newIds.size === lastIds.size &&
-                     [...newIds].every((id) => lastIds.has(id));
+      const isSame = newIds.size === lastIds.size && [...newIds].every((id) => lastIds.has(id));
 
       if (!isSame) {
         lastSelectionRef.current = newIds;

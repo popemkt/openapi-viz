@@ -38,7 +38,7 @@ import { useMatchingNodeIds } from '../hooks/useFilteredGraph';
 import { HTTP_METHODS, METHOD_COLORS } from '@/constants';
 import { cn } from '@/lib/utils';
 import type { DisplayMode } from '@/utils/displayUtils';
-import type { LayoutDirection } from '@/stores/uiStore';
+import type { LayoutDirection, LayoutEngine } from '@/stores/uiStore';
 import type { CompactLevel } from '@/stores/uiStore';
 
 // Node visibility options for segmented control
@@ -99,9 +99,16 @@ export const FilterToolbar = memo(function FilterToolbar() {
     setNodeSpacing,
     nodeScale,
     setNodeScale,
+    layoutEngine,
+    setLayoutEngine,
   } = useUIStore();
 
   const { setSelectedNodeIds, relayoutVisibleNodes } = useGraphStore();
+
+  // Local state for pending layout settings (only applied on "Apply Layout" click)
+  const [pendingDirection, setPendingDirection] = useState<LayoutDirection>(layoutDirection);
+  const [pendingSpacing, setPendingSpacing] = useState(`${rankSpacing}-${nodeSpacing}`);
+  const [pendingEngine, setPendingEngine] = useState<LayoutEngine>(layoutEngine);
 
   // Get matching (highlighted) node IDs for "Select Highlighted" feature
   const matchingNodeIds = useMatchingNodeIds();
@@ -144,10 +151,20 @@ export const FilterToolbar = memo(function FilterToolbar() {
   };
 
   const handleApplyLayout = () => {
+    // Parse pending spacing
+    const [rank, node] = pendingSpacing.split('-').map(Number);
+
+    // Commit pending settings to store
+    setLayoutDirection(pendingDirection);
+    setRankSpacing(rank);
+    setNodeSpacing(node);
+    setLayoutEngine(pendingEngine);
+
+    // Apply layout with the new settings
     relayoutVisibleNodes({
-      direction: layoutDirection,
-      rankSpacing,
-      nodeSpacing,
+      direction: pendingDirection,
+      rankSpacing: rank,
+      nodeSpacing: node,
     });
   };
 
@@ -189,12 +206,15 @@ export const FilterToolbar = memo(function FilterToolbar() {
   const hasMethodOrTagFilters = methodFilters.length > 0 || tagFilters.length > 0;
 
   return (
-    <div ref={containerRef} className="flex flex-wrap items-center gap-x-2 gap-y-1.5 border-b border-border bg-card/50 px-3 py-2">
+    <div
+      ref={containerRef}
+      className="border-border bg-card/50 flex flex-wrap items-center gap-x-2 gap-y-1.5 border-b px-3 py-2"
+    >
       {/* === SECTION 1: Search (always visible, responsive width) === */}
-      <div className="relative min-w-[140px] flex-1 max-w-[250px]">
-        <SearchIcon className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <div className="relative max-w-[250px] min-w-[140px] flex-1">
+        <SearchIcon className="text-muted-foreground absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2" />
         <Input
-          placeholder={isCompact ? "Search..." : "Search endpoints & schemas..."}
+          placeholder={isCompact ? 'Search...' : 'Search endpoints & schemas...'}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="h-8 pl-8 text-sm"
@@ -204,19 +224,19 @@ export const FilterToolbar = memo(function FilterToolbar() {
       {/* Path pattern - hidden in very compact mode, shown in "More" dropdown */}
       {!isCompact && (
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground whitespace-nowrap">Path:</span>
+          <span className="text-muted-foreground text-xs whitespace-nowrap">Path:</span>
           <Input
             placeholder="/api/*"
             value={pathPattern}
             onChange={(e) => setPathPattern(e.target.value)}
-            className="h-8 w-[100px] text-sm font-mono"
+            className="h-8 w-[100px] font-mono text-sm"
             title="Path pattern (supports * wildcards)"
           />
         </div>
       )}
 
       {/* Separator */}
-      <div className="h-6 w-px bg-border" />
+      <div className="bg-border h-6 w-px" />
 
       {/* === SECTION 2: Node Visibility & Filter Mode === */}
       {/* In compact mode: icon-only segmented controls */}
@@ -224,7 +244,9 @@ export const FilterToolbar = memo(function FilterToolbar() {
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-1">
-              {!isCompact && <span className="text-xs text-muted-foreground whitespace-nowrap">Show:</span>}
+              {!isCompact && (
+                <span className="text-muted-foreground text-xs whitespace-nowrap">Show:</span>
+              )}
               <SegmentedControl
                 size="sm"
                 value={nodeVisibility}
@@ -242,7 +264,9 @@ export const FilterToolbar = memo(function FilterToolbar() {
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-1">
-              {!isCompact && <span className="text-xs text-muted-foreground whitespace-nowrap">Filter:</span>}
+              {!isCompact && (
+                <span className="text-muted-foreground text-xs whitespace-nowrap">Filter:</span>
+              )}
               <SegmentedControl
                 size="sm"
                 value={filterDisplayMode}
@@ -280,7 +304,7 @@ export const FilterToolbar = memo(function FilterToolbar() {
       )}
 
       {/* Separator */}
-      <div className="h-6 w-px bg-border" />
+      <div className="bg-border h-6 w-px" />
 
       {/* === SECTION 3: View & Layout Settings (always dropdowns) === */}
       <div className="flex items-center gap-1">
@@ -356,8 +380,8 @@ export const FilterToolbar = memo(function FilterToolbar() {
           <DropdownMenuContent align="start" className="w-56">
             <DropdownMenuLabel className="text-xs">Direction</DropdownMenuLabel>
             <DropdownMenuRadioGroup
-              value={layoutDirection}
-              onValueChange={(value) => setLayoutDirection(value as LayoutDirection)}
+              value={pendingDirection}
+              onValueChange={(value) => setPendingDirection(value as LayoutDirection)}
             >
               {(['LR', 'TB', 'RL', 'BT'] as LayoutDirection[]).map((dir) => (
                 <DropdownMenuRadioItem key={dir} value={dir} className="gap-2">
@@ -369,12 +393,8 @@ export const FilterToolbar = memo(function FilterToolbar() {
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="text-xs">Spacing</DropdownMenuLabel>
             <DropdownMenuRadioGroup
-              value={`${rankSpacing}-${nodeSpacing}`}
-              onValueChange={(value) => {
-                const [rank, node] = value.split('-').map(Number);
-                setRankSpacing(rank);
-                setNodeSpacing(node);
-              }}
+              value={pendingSpacing}
+              onValueChange={(value) => setPendingSpacing(value)}
             >
               <DropdownMenuRadioItem value="50-20">Compact</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="100-50">Normal</DropdownMenuRadioItem>
@@ -382,12 +402,17 @@ export const FilterToolbar = memo(function FilterToolbar() {
               <DropdownMenuRadioItem value="200-100">Wide</DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
             <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs">Layout Engine</DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={pendingEngine}
+              onValueChange={(value) => setPendingEngine(value as LayoutEngine)}
+            >
+              <DropdownMenuRadioItem value="dagre">Dagre (Fast)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="elk">ELK (Better Routing)</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
             <div className="p-2">
-              <Button
-                size="sm"
-                className="w-full"
-                onClick={handleApplyLayout}
-              >
+              <Button size="sm" className="w-full" onClick={handleApplyLayout}>
                 Apply Layout
               </Button>
             </div>
@@ -396,7 +421,7 @@ export const FilterToolbar = memo(function FilterToolbar() {
       </div>
 
       {/* Separator */}
-      <div className="h-6 w-px bg-border" />
+      <div className="bg-border h-6 w-px" />
 
       {/* === SECTION 4: Filters (Methods, Tags, Path in compact mode) === */}
       <div className="flex items-center gap-1">
@@ -422,7 +447,7 @@ export const FilterToolbar = memo(function FilterToolbar() {
                   placeholder="/api/*"
                   value={pathPattern}
                   onChange={(e) => setPathPattern(e.target.value)}
-                  className="h-8 text-sm font-mono"
+                  className="h-8 font-mono text-sm"
                   title="Path pattern (supports * wildcards)"
                 />
               </div>
@@ -436,9 +461,7 @@ export const FilterToolbar = memo(function FilterToolbar() {
                     checked={methodFilters.includes(method)}
                     onCheckedChange={() => toggleMethod(method)}
                   >
-                    <span className={cn('uppercase font-mono text-xs', colors.text)}>
-                      {method}
-                    </span>
+                    <span className={cn('font-mono text-xs uppercase', colors.text)}>{method}</span>
                   </DropdownMenuCheckboxItem>
                 );
               })}
@@ -484,7 +507,7 @@ export const FilterToolbar = memo(function FilterToolbar() {
                       checked={methodFilters.includes(method)}
                       onCheckedChange={() => toggleMethod(method)}
                     >
-                      <span className={cn('uppercase font-mono text-xs', colors.text)}>
+                      <span className={cn('font-mono text-xs uppercase', colors.text)}>
                         {method}
                       </span>
                     </DropdownMenuCheckboxItem>
@@ -531,7 +554,7 @@ export const FilterToolbar = memo(function FilterToolbar() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 gap-1 text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground h-8 gap-1"
               onClick={resetFilters}
             >
               <XIcon className="h-4 w-4" />

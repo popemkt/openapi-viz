@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { GraphNode, GraphEdge, LayoutState } from '@/types';
 import { applyDagreLayout, type LayoutOptions } from '@/core/graph-builder/layout';
+import { applyElkLayout, UI_TO_ELK_DIRECTION } from '@/core/graph-builder/elkLayout';
+import { useUIStore } from './uiStore';
 
 interface GraphState {
   nodes: GraphNode[];
@@ -44,8 +46,8 @@ interface GraphState {
   restoreBaseLayout: () => void;
   /** Toggle auto-layout mode */
   setAutoLayout: (enabled: boolean) => void;
-  /** Relayout visible nodes using Dagre algorithm */
-  relayoutVisibleNodes: (options?: Partial<LayoutOptions>) => void;
+  /** Relayout visible nodes using selected layout engine (Dagre or ELK) */
+  relayoutVisibleNodes: (options?: Partial<LayoutOptions>) => Promise<void>;
   reset: () => void;
 }
 
@@ -175,9 +177,7 @@ export const useGraphStore = create<GraphState>((set) => ({
       });
 
       // Update selection to only include nodes that remain visible
-      const newSelected = new Set(
-        [...state.selectedNodeIds].filter((id) => keepVisible.has(id))
-      );
+      const newSelected = new Set([...state.selectedNodeIds].filter((id) => keepVisible.has(id)));
 
       return { hiddenNodeIds: newHidden, selectedNodeIds: newSelected };
     }),
@@ -235,44 +235,57 @@ export const useGraphStore = create<GraphState>((set) => ({
 
   setAutoLayout: (enabled) => set({ isAutoLayoutEnabled: enabled }),
 
-  relayoutVisibleNodes: (options?: Partial<LayoutOptions>) =>
-    set((state) => {
-      // Get only visible (non-hidden) nodes
-      const visibleNodes = state.nodes.filter(
-        (node) => !state.hiddenNodeIds.has(node.id)
-      );
+  relayoutVisibleNodes: async (options?: Partial<LayoutOptions>) => {
+    const state = useGraphStore.getState();
+    const uiState = useUIStore.getState();
 
-      // Get edges that connect visible nodes only
-      const visibleNodeIds = new Set(visibleNodes.map((n) => n.id));
-      const visibleEdges = state.edges.filter(
-        (edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)
-      );
+    // Get only visible (non-hidden) nodes
+    const visibleNodes = state.nodes.filter((node) => !state.hiddenNodeIds.has(node.id));
 
-      // Apply Dagre layout to visible nodes with optional custom settings
-      const layoutedVisibleNodes = applyDagreLayout(visibleNodes, visibleEdges, options);
+    // Get edges that connect visible nodes only
+    const visibleNodeIds = new Set(visibleNodes.map((n) => n.id));
+    const visibleEdges = state.edges.filter(
+      (edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)
+    );
 
-      // Create a map of new positions
-      const newPositions: Record<string, { x: number; y: number }> = {};
-      layoutedVisibleNodes.forEach((node) => {
-        newPositions[node.id] = node.position;
+    let layoutedVisibleNodes: GraphNode[];
+
+    if (uiState.layoutEngine === 'elk') {
+      // Use ELK layout (async)
+      const elkDirection =
+        UI_TO_ELK_DIRECTION[options?.direction || uiState.layoutDirection] || 'RIGHT';
+      layoutedVisibleNodes = await applyElkLayout(visibleNodes, visibleEdges, {
+        direction: elkDirection,
+        nodeSpacing: options?.nodeSpacing ?? uiState.nodeSpacing,
+        layerSpacing: options?.rankSpacing ?? uiState.rankSpacing,
       });
+    } else {
+      // Use Dagre layout (sync)
+      layoutedVisibleNodes = applyDagreLayout(visibleNodes, visibleEdges, options);
+    }
 
-      // Merge layouted nodes back: update visible node positions, keep hidden nodes as-is
-      const updatedNodes = state.nodes.map((node) => {
-        if (newPositions[node.id]) {
-          return { ...node, position: newPositions[node.id] };
-        }
-        return node;
-      });
+    // Create a map of new positions
+    const newPositions: Record<string, { x: number; y: number }> = {};
+    layoutedVisibleNodes.forEach((node) => {
+      newPositions[node.id] = node.position;
+    });
 
-      // Also update the layout.positions for consistency
-      const updatedPositions = { ...state.layout.positions, ...newPositions };
+    // Merge layouted nodes back: update visible node positions, keep hidden nodes as-is
+    const updatedNodes = state.nodes.map((node) => {
+      if (newPositions[node.id]) {
+        return { ...node, position: newPositions[node.id] };
+      }
+      return node;
+    });
 
-      return {
-        nodes: updatedNodes,
-        layout: { ...state.layout, positions: updatedPositions },
-      };
-    }),
+    // Also update the layout.positions for consistency
+    const updatedPositions = { ...state.layout.positions, ...newPositions };
+
+    useGraphStore.setState({
+      nodes: updatedNodes,
+      layout: { ...state.layout, positions: updatedPositions },
+    });
+  },
 
   reset: () =>
     set({

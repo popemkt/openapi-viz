@@ -62,6 +62,11 @@ export interface SchemaNodeData extends Record<string, unknown> {
    * Count of outgoing references from this schema.
    */
   outgoingRefCount: number;
+
+  /**
+   * Whether this schema is orphaned (never referenced by any endpoint or schema).
+   */
+  isOrphaned?: boolean;
 }
 
 export type GraphNodeData = EndpointNodeData | SchemaNodeData;
@@ -81,30 +86,30 @@ export type GraphNode = Node<GraphNodeData>;
  */
 export type EdgeType =
   // Endpoint -> Schema edges
-  | 'request-body'       // Request body uses schema
-  | 'response'           // Response body uses schema
-  | 'parameter'          // Parameter uses schema
+  | 'request-body' // Request body uses schema
+  | 'response' // Response body uses schema
+  | 'parameter' // Parameter uses schema
 
   // Schema -> Schema composition edges
-  | 'allOf'              // Inheritance/extension
-  | 'oneOf'              // Exclusive alternatives
-  | 'anyOf'              // Non-exclusive alternatives
-  | 'not'                // Negation
+  | 'allOf' // Inheritance/extension
+  | 'oneOf' // Exclusive alternatives
+  | 'anyOf' // Non-exclusive alternatives
+  | 'not' // Negation
 
   // Schema -> Schema structural edges
-  | 'property'           // Named property references schema
-  | 'additional-props'   // additionalProperties references schema
-  | 'array-items'        // Array items reference schema
-  | 'tuple-item'         // Tuple position references schema
+  | 'property' // Named property references schema
+  | 'additional-props' // additionalProperties references schema
+  | 'array-items' // Array items reference schema
+  | 'tuple-item' // Tuple position references schema
 
   // Schema -> Schema polymorphism edges
-  | 'discriminator'      // Discriminator mapping
+  | 'discriminator' // Discriminator mapping
 
   // Legacy type for backward compatibility
-  | 'schema-ref'         // Generic schema reference (deprecated, use 'property')
+  | 'schema-ref' // Generic schema reference (deprecated, use 'property')
 
   // Special type
-  | 'circular';          // Marks edges that are part of a cycle
+  | 'circular'; // Marks edges that are part of a cycle
 
 /**
  * Semantic context for an edge, providing human-readable details.

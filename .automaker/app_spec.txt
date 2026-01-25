@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project_specification>
+  <project_name>OpenAPI Visualization</project_name>
+
+  <overview>
+    A modern web application for visualizing OpenAPI specifications as interactive graphs. The application enables API architects, developers, and technical writers to explore API structure, understand schema relationships, and navigate complex OpenAPI specifications with ease. It provides a split-view interface with a Monaco code editor for editing YAML/JSON specifications and a React Flow-based graph visualization that displays endpoints and schemas as nodes with semantic relationship edges. The core architecture separates OpenAPI semantics from visual representation by extracting a rich relationship model that captures the meaning of connections between components, enabling features like semantically meaningful edge labels, filtering by relationship type, and contextual circular dependency detection.
+  </overview>
+
+  <technology_stack>
+    <technology>React 19</technology>
+    <technology>TypeScript 5.9</technology>
+    <technology>Vite 7</technology>
+    <technology>Zustand 5 (state management)</technology>
+    <technology>@xyflow/react (React Flow) - graph visualization</technology>
+    <technology>Monaco Editor (@monaco-editor/react) - code editor</technology>
+    <technology>Dagre - graph layout algorithm</technology>
+    <technology>ELK.js - advanced graph layout engine</technology>
+    <technology>Tailwind CSS 4.0 with OKLCH colors</technology>
+    <technology>Radix UI - accessible UI components</technology>
+    <technology>html-to-image - export functionality</technology>
+    <technology>@readme/openapi-parser - OpenAPI validation</technology>
+    <technology>yaml - YAML parsing</technology>
+    <technology>Vitest - testing framework</technology>
+    <technology>@testing-library/react - React testing utilities</technology>
+    <technology>pnpm - package manager</technology>
+    <technology>ESLint - linting</technology>
+    <technology>Prettier - code formatting</technology>
+    <technology>Web Workers - off-thread computation</technology>
+  </technology_stack>
+
+  <core_capabilities>
+    <capability>Interactive graph visualization of OpenAPI specifications with endpoint and schema nodes</capability>
+    <capability>Split-view interface with Monaco code editor and graph canvas</capability>
+    <capability>Real-time live parsing and validation with debounced updates</capability>
+    <capability>Semantic relationship model capturing why components are connected (request body, response, composition, etc.)</capability>
+    <capability>Circular reference detection using Tarjan&apos;s strongly connected components algorithm</capability>
+    <capability>Source navigation - click nodes to jump to corresponding YAML/JSON location</capability>
+    <capability>Multiple graph layout engines (Dagre and ELK) with configurable direction and spacing</capability>
+    <capability>Filtering by HTTP methods, tags, path patterns, and search queries</capability>
+    <capability>Multi-select with marquee selection and keyboard shortcuts</capability>
+    <capability>Bulk actions for managing node visibility</capability>
+    <capability>Export to PNG, SVG, and HTML formats</capability>
+    <capability>Dark/light/system theme support</capability>
+    <capability>Persistent state across sessions using Zustand middleware</capability>
+    <capability>Web Worker-based parsing and layout computation for UI responsiveness</capability>
+  </core_capabilities>
+
+  <implemented_features>
+    <feature>
+      <name>Monaco Code Editor Integration</name>
+      <description>Full-featured YAML/JSON code editor with syntax highlighting, error markers, line numbers, code folding, and theme synchronization. Displays validation errors and warnings inline with proper severity levels.</description>
+      <file_locations>
+        <location>src/features/editor/components/TextEditor.tsx</location>
+        <location>src/stores/editorStore.ts</location>
+      </file_locations>
+    </feature>
+    <feature>
+      <name>Graph Visualization Canvas</name>
+      <description>Interactive React Flow-based graph canvas with custom endpoint and schema nodes, color-coded edges by relationship type, minimap navigation, zoom controls, background patterns, and configurable node scaling.</description>
+      <file_locations>
+        <location>src/features/graph/components/GraphCanvas.tsx</location>
+        <location>src/features/graph/components/EndpointNode.tsx</location>
+        <location>src/features/graph/components/SchemaNode.tsx</location>
+      </file_locations>
+    </feature>
+    <feature>
+      <name>Semantic Relationship Model</name>
+      <description>Rich relationship types capturing endpoint-to-schema connections (request body, response, parameters) and schema-to-schema relationships (allOf, oneOf, anyOf, properties, array items, discriminators) with full context including property names, status codes, media types, and more.</description>
+      <file_locations>
+        <location>src/types/relationships.ts</location>
+        <location>src/core/parser/relationshipCollector.ts</location>
+      </file_locations>
+    </feature>
+    <feature>
+      <name>OpenAPI Parser with Web Worker</name>
+      <description>Background thread parsing that validates OpenAPI specs, extracts endpoints, schemas, and relationships, builds source maps for navigation, and handles YAML/JSON parsing with error recovery.</description>
+      <file_locations>
+        <location>src/core/parser/parseSpec.ts</location>
+        <location>src/core/parser/workers/parser.worker.ts</location>
+        <location>src/core/parser/workers/parserWorkerClient.ts</location>
+        <location>src/core/parser/extractors/</location>
+      </file_locations>
+    </feature>
+    <feature>
+      <name>Graph Builder with Layout Engines</name>
+      <description>Converts parsed spec into graph nodes and edges with automatic layout using Dagre or ELK algorithms. Supports configurable direction (LR/TB/RL/BT), node spacing, and rank spacing with relayout on visible nodes.</description>
+      <file_locations>
+        <location>src/core/graph-builder/buildGraph.ts</location>
+        <location>src/core/graph-builder/layout.ts</location>
+        <location>src/core/graph-builder/elkLayout.ts</location>
+        <location>src/core/graph-builder/nodeBuilder.ts</location>
+        <location>src/core/graph-builder/edgeBuilder.ts</location>
+      </file_locations>
+    </feature>
+    <feature>
+      <name>Circular Reference Detection</name>
+      <description>Uses Tarjan&apos;s strongly connected components algorithm to identify circular dependency chains and displays them with dashed edges and warning indicators.</description>
+      <file_locations>
+        <location>src/core/graph-builder/circularDetection.ts</location>
+      </file_locations>
+    </feature>
+    <feature>
+      <name>Filtering System</name>
+      <description>Comprehensive filtering with toggles for endpoints/schemas, HTTP method filters, tag-based filtering, path pattern matching, and full-text search. Filter display modes allow hiding or highlighting non-matching nodes.</description>
+      <file_locations>
+        <location>src/stores/filterStore.ts</location>
+        <location>src/features/graph/hooks/useFilteredGraph.ts</location>
+        <location>src/features/graph/components/FilterToolbar.tsx</location>
+      </file_locations>
+    </feature>
+    <feature>
+      <name>Multi-Select and Bulk Actions</name>
+      <description>Support for Shift+click multi-select, marquee/lasso selection, select all, select connected nodes, focus on selection (hide others), and keyboard shortcuts (Delete to hide, Escape to clear selection).</description>
+      <file_locations>
+        <location>src/stores/graphStore.ts</location>
+        <location>src/features/graph/components/BulkActionsToolbar.tsx</location>
+        <location>src/features/graph/components/GraphCanvas.tsx</location>
+      </file_locations>
+    </feature>
+    <feature>
+      <name>Detail Panel</name>
+      <description>Expandable bottom panel showing detailed information about selected nodes including endpoint parameters, responses, schema properties, incoming/outgoing relationships, and jump-to-source functionality.</description>
+      <file_locations>
+        <location>src/features/detail-panel/components/DetailPanel.tsx</location>
+        <location>src/features/detail-panel/components/EndpointDetail.tsx</location>
+        <location>src/features/detail-panel/components/SchemaDetail.tsx</location>
+      </file_locations>
+    </feature>
+    <feature>
+      <name>Source Navigation</name>
+      <description>Bidirectional navigation between graph nodes and source code. Double-click nodes to highlight corresponding YAML/JSON in the editor, with automatic view mode switching.</description>
+      <file_locations>
+        <location>src/shared/hooks/useSourceHighlight.ts</location>
+        <location>src/core/parser/lineMapper.ts</location>
+      </file_locations>
+    </feature>
+    <feature>
+      <name>Export Functionality</name>
+      <description>Export graph visualizations as PNG images, SVG vectors, or standalone HTML documents with embedded spec information.</description>
+      <file_locations>
+        <location>src/features/export/hooks/useExport.ts</location>
+        <location>src/features/export/utils/exportUtils.ts</location>
+      </file_locations>
+    </feature>
+    <feature>
+      <name>File Management</name>
+      <description>Load OpenAPI specs from local files via file picker or drag-and-drop, with unsaved changes warning before navigation.</description>
+      <file_locations>
+        <location>src/features/file-manager/hooks/useFileOperations.ts</location>
+        <location>src/features/file-manager/hooks/useUnsavedWarning.ts</location>
+      </file_locations>
+    </feature>
+    <feature>
+      <name>Theme System</name>
+      <description>Light, dark, and system-aware theme modes with automatic detection of user preferences and persistence across sessions.</description>
+      <file_locations>
+        <location>src/app/useTheme.ts</location>
+        <location>src/stores/uiStore.ts</location>
+      </file_locations>
+    </feature>
+    <feature>
+      <name>Persistent State Management</name>
+      <description>Zustand-based state stores with selective persistence for editor content, UI preferences, and filter settings using localStorage middleware.</description>
+      <file_locations>
+        <location>src/stores/specStore.ts</location>
+        <location>src/stores/graphStore.ts</location>
+        <location>src/stores/uiStore.ts</location>
+        <location>src/stores/filterStore.ts</location>
+      </file_locations>
+    </feature>
+    <feature>
+      <name>Resizable Split View</name>
+      <description>Adjustable split panel layout supporting editor-only, graph-only, or split view modes with persistent split position.</description>
+      <file_locations>
+        <location>src/app/MainContent.tsx</location>
+        <location>src/app/Layout.tsx</location>
+        <location>src/components/ui/resizable.tsx</location>
+      </file_locations>
+    </feature>
+  </implemented_features>
+
+  <additional_requirements>
+    <requirement>Node.js 18+</requirement>
+    <requirement>pnpm 10+</requirement>
+    <requirement>Modern browser with Web Worker support</requirement>
+    <requirement>ES2022 target environment</requirement>
+  </additional_requirements>
+
+  <development_guidelines>
+    <guideline>Use feature-based module organization under src/features/ with index.ts exports</guideline>
+    <guideline>State management through Zustand stores in src/stores/ with selective persistence</guideline>
+    <guideline>Web Workers for CPU-intensive tasks to maintain UI responsiveness</guideline>
+    <guideline>TypeScript strict mode with no unused locals/parameters</guideline>
+    <guideline>Testing with Vitest and Testing Library focusing on parser, graph builder, and worker integration</guideline>
+    <guideline>Conventional commit format: type(scope): description</guideline>
+    <guideline>Run pnpm verify before commits to ensure lint, typecheck, and tests pass</guideline>
+    <guideline>Path aliases configured with @/ mapping to src/</guideline>
+    <guideline>Radix UI primitives for accessible components in src/components/ui/</guideline>
+    <guideline>Tailwind CSS 4.0 with OKLCH color system for theming</guideline>
+  </development_guidelines>
+
+  <implementation_roadmap>
+    <phase>
+      <name>Core Infrastructure</name>
+      <status>completed</status>
+      <description>React 19 + Vite setup, Zustand state management, TypeScript configuration, Tailwind CSS styling, Radix UI components</description>
+    </phase>
+    <phase>
+      <name>OpenAPI Parser</name>
+      <status>completed</status>
+      <description>YAML/JSON parsing, OpenAPI validation, endpoint/schema extraction, relationship collection, source mapping, Web Worker implementation</description>
+    </phase>
+    <phase>
+      <name>Graph Visualization</name>
+      <status>completed</status>
+      <description>React Flow integration, custom node components, edge styling, layout engines (Dagre/ELK), circular detection, filtering system</description>
+    </phase>
+    <phase>
+      <name>Editor Integration</name>
+      <status>completed</status>
+      <description>Monaco Editor setup, syntax highlighting, error markers, theme synchronization, source navigation</description>
+    </phase>
+    <phase>
+      <name>User Experience</name>
+      <status>completed</status>
+      <description>Multi-select, bulk actions, detail panel, export functionality, file management, keyboard shortcuts, persistent settings</description>
+    </phase>
+    <phase>
+      <name>Testing</name>
+      <status>completed</status>
+      <description>Vitest setup, parser tests, graph builder tests, worker integration tests</description>
+    </phase>
+  </implementation_roadmap>
+</project_specification>

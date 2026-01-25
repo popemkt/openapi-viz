@@ -14,6 +14,7 @@ import type {
   Schema,
 } from '@/types';
 import type { Relationship } from '@/types/relationships';
+import { detectOrphanedSchemas } from './orphanDetection';
 
 /**
  * Reference count information for a schema.
@@ -26,10 +27,7 @@ export interface RefCounts {
 /**
  * Calculates reference counts for schema nodes based on edges.
  */
-export function calculateRefCounts(
-  schemas: Schema[],
-  edges: GraphEdge[]
-): Map<string, RefCounts> {
+export function calculateRefCounts(schemas: Schema[], edges: GraphEdge[]): Map<string, RefCounts> {
   const counts = new Map<string, RefCounts>();
 
   // Initialize counts for all schemas (keyed by name to match edge source/target format)
@@ -86,9 +84,7 @@ export function collectDiscriminatorValues(
 /**
  * Determines the composition type of a schema if any.
  */
-export function getCompositionType(
-  schema: Schema
-): 'allOf' | 'oneOf' | 'anyOf' | undefined {
+export function getCompositionType(schema: Schema): 'allOf' | 'oneOf' | 'anyOf' | undefined {
   if (schema.allOf && schema.allOf.length > 0) {
     return 'allOf';
   }
@@ -126,13 +122,14 @@ export interface SchemaNodeOptions {
   schema: Schema;
   refCounts: RefCounts;
   discriminatorValues?: string[];
+  isOrphaned?: boolean;
 }
 
 /**
  * Creates a graph node for a schema with enhanced metadata.
  */
 export function createSchemaNode(options: SchemaNodeOptions): GraphNode {
-  const { schema, refCounts, discriminatorValues } = options;
+  const { schema, refCounts, discriminatorValues, isOrphaned } = options;
 
   const compositionType = getCompositionType(schema);
 
@@ -142,12 +139,11 @@ export function createSchemaNode(options: SchemaNodeOptions): GraphNode {
     visible: true,
     hasDiscriminator: !!schema.discriminator,
     discriminatorValues:
-      discriminatorValues && discriminatorValues.length > 0
-        ? discriminatorValues
-        : undefined,
+      discriminatorValues && discriminatorValues.length > 0 ? discriminatorValues : undefined,
     compositionType,
     incomingRefCount: refCounts.incoming,
     outgoingRefCount: refCounts.outgoing,
+    isOrphaned,
   };
 
   return {
@@ -175,7 +171,7 @@ export interface BuildSchemaNodesOptions {
 }
 
 /**
- * Builds all schema nodes with reference counts and discriminator values.
+ * Builds all schema nodes with reference counts, discriminator values, and orphan status.
  */
 export function buildSchemaNodes(options: BuildSchemaNodesOptions): GraphNode[] {
   const { schemas, edges, relationships } = options;
@@ -183,15 +179,23 @@ export function buildSchemaNodes(options: BuildSchemaNodesOptions): GraphNode[] 
   // Calculate reference counts from edges
   const refCounts = calculateRefCounts(schemas, edges);
 
+  // Detect orphaned schemas (those with zero incoming references)
+  const orphanedSchemas = detectOrphanedSchemas(
+    schemas.map((s) => s.name),
+    relationships
+  );
+
   // Build nodes
   return schemas.map((schema) => {
     const counts = refCounts.get(schema.name) || { incoming: 0, outgoing: 0 };
     const discriminatorValues = collectDiscriminatorValues(schema.name, relationships);
+    const isOrphaned = orphanedSchemas.has(schema.name);
 
     return createSchemaNode({
       schema,
       refCounts: counts,
       discriminatorValues,
+      isOrphaned,
     });
   });
 }

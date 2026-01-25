@@ -13,6 +13,7 @@ import {
   TagIcon,
   HashIcon,
   BookOpenIcon,
+  AlertTriangleIcon,
 } from 'lucide-react';
 import { EDGE_COLORS } from '@/constants/colors';
 import { useUIStore, type LayoutDirection } from '@/stores/uiStore';
@@ -38,8 +39,18 @@ interface SchemaNodeProps {
 }
 
 export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNodeProps) {
-  const { schema, hasDiscriminator, discriminatorValues, compositionType, incomingRefCount, outgoingRefCount, dimmed } = data;
-  const { schemaNameDisplayMode, compactLevel, maxNodeWidth, nodeScale, layoutDirection } = useUIStore();
+  const {
+    schema,
+    hasDiscriminator,
+    discriminatorValues,
+    compositionType,
+    incomingRefCount,
+    outgoingRefCount,
+    dimmed,
+    isOrphaned,
+  } = data;
+  const { schemaNameDisplayMode, compactLevel, maxNodeWidth, nodeScale, layoutDirection } =
+    useUIStore();
 
   const propertyCount = schema.properties ? Object.keys(schema.properties).length : 0;
   const requiredCount = schema.required?.length || 0;
@@ -58,9 +69,11 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
   const hasOneOf = compositionType === 'oneOf' || (schema.oneOf && schema.oneOf.length > 0);
   const hasAnyOf = compositionType === 'anyOf' || (schema.anyOf && schema.anyOf.length > 0);
   const hasItems = !!schema.items;
-  const hasAdditionalProps = schema.additionalProperties !== undefined && schema.additionalProperties !== true;
+  const hasAdditionalProps =
+    schema.additionalProperties !== undefined && schema.additionalProperties !== true;
   const hasPrefixItems = schema.prefixItems && schema.prefixItems.length > 0;
-  const hasComposition = hasAllOf || hasOneOf || hasAnyOf || hasItems || hasAdditionalProps || hasPrefixItems;
+  const hasComposition =
+    hasAllOf || hasOneOf || hasAnyOf || hasItems || hasAdditionalProps || hasPrefixItems;
 
   // Calculate scaled dimensions
   const scaledMinWidth = 160 * nodeScale;
@@ -75,9 +88,10 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
   return (
     <div
       className={cn(
-        'rounded-md border bg-card shadow-sm transition-all origin-top-left',
-        selected && 'ring-2 ring-primary',
-        dimmed && 'opacity-30 grayscale'
+        'bg-card origin-top-left rounded-md border shadow-sm transition-all',
+        selected && 'ring-primary ring-2',
+        dimmed && 'opacity-30 grayscale',
+        isOrphaned && 'border-2 border-dashed border-orange-400'
       )}
       style={{
         minWidth: scaledMinWidth,
@@ -97,7 +111,7 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
           <Tooltip>
             <TooltipTrigger asChild>
               <span
-                className="font-mono font-medium text-slate-700 dark:text-slate-300 truncate cursor-help"
+                className="cursor-help truncate font-mono font-medium text-slate-700 dark:text-slate-300"
                 style={{ fontSize: headerFontSize }}
               >
                 {displayName}
@@ -109,7 +123,7 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
           </Tooltip>
         ) : (
           <span
-            className="font-mono font-medium text-slate-700 dark:text-slate-300 truncate"
+            className="truncate font-mono font-medium text-slate-700 dark:text-slate-300"
             style={{ fontSize: headerFontSize }}
           >
             {displayName}
@@ -117,13 +131,36 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
         )}
       </div>
 
+      {/* Orphaned badge */}
+      {isOrphaned && (
+        <div className="flex items-center gap-1 px-3 pt-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge className="cursor-help bg-orange-500 text-[10px] text-white">
+                <AlertTriangleIcon className="mr-1 h-3 w-3" />
+                Orphaned
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-xs">
+                <div className="font-medium">Unused Schema</div>
+                <div className="text-muted-foreground">
+                  This schema is not referenced by any endpoint or other schema. Consider removing
+                  it to reduce API spec complexity.
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+
       {/* Discriminator badge - hidden in minimal mode */}
       {!isMinimal && hasDiscriminator && schema.discriminator && (
         <div className="flex items-center gap-1 px-3 pt-2">
           <Tooltip>
             <TooltipTrigger asChild>
               <Badge
-                className="text-[10px] text-white cursor-help"
+                className="cursor-help text-[10px] text-white"
                 style={{ backgroundColor: EDGE_COLORS.discriminator }}
               >
                 <TagIcon className="mr-1 h-3 w-3" />
@@ -153,16 +190,19 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
         <div className="flex items-center gap-1 px-3 pt-1">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge variant="outline" className="text-[10px] cursor-help border-orange-400 text-orange-600">
-                <TagIcon className="mr-1 h-3 w-3" />
-                = {discriminatorValues.join(' | ')}
+              <Badge
+                variant="outline"
+                className="cursor-help border-orange-400 text-[10px] text-orange-600"
+              >
+                <TagIcon className="mr-1 h-3 w-3" />= {discriminatorValues.join(' | ')}
               </Badge>
             </TooltipTrigger>
             <TooltipContent>
               <div className="text-xs">
                 <div className="font-medium">Discriminator target</div>
                 <div className="text-muted-foreground">
-                  This schema is selected when discriminator value is: {discriminatorValues.join(' or ')}
+                  This schema is selected when discriminator value is:{' '}
+                  {discriminatorValues.join(' or ')}
                 </div>
               </div>
             </TooltipContent>
@@ -213,7 +253,7 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
             <Tooltip>
               <TooltipTrigger asChild>
                 <Badge
-                  className="text-[10px] text-white cursor-help"
+                  className="cursor-help text-[10px] text-white"
                   style={{ backgroundColor: EDGE_COLORS['additional-props'] }}
                 >
                   <BookOpenIcon className="mr-1 h-3 w-3" />
@@ -233,7 +273,7 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
             <Tooltip>
               <TooltipTrigger asChild>
                 <Badge
-                  className="text-[10px] text-white cursor-help"
+                  className="cursor-help text-[10px] text-white"
                   style={{ backgroundColor: EDGE_COLORS['tuple-item'] }}
                 >
                   <HashIcon className="mr-1 h-3 w-3" />
@@ -253,7 +293,7 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
       {/* Properties info - hidden in minimal mode */}
       {!isMinimal && (
         <div className="px-3 py-2">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-2 text-xs">
             <Badge variant="outline" className="text-[10px]">
               {schema.type}
             </Badge>
@@ -269,14 +309,18 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
             {(incomingRefCount > 0 || outgoingRefCount > 0) && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-slate-400 cursor-help">
+                  <span className="cursor-help text-slate-400">
                     ←{incomingRefCount} →{outgoingRefCount}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
                   <div className="text-xs">
-                    <div>{incomingRefCount} incoming reference{incomingRefCount !== 1 ? 's' : ''}</div>
-                    <div>{outgoingRefCount} outgoing reference{outgoingRefCount !== 1 ? 's' : ''}</div>
+                    <div>
+                      {incomingRefCount} incoming reference{incomingRefCount !== 1 ? 's' : ''}
+                    </div>
+                    <div>
+                      {outgoingRefCount} outgoing reference{outgoingRefCount !== 1 ? 's' : ''}
+                    </div>
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -290,14 +334,12 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
                 .slice(0, 3)
                 .map(([name, prop]: [string, SchemaProperty]) => (
                   <div key={name} className="flex items-center gap-1 text-[10px]">
-                    <span className={cn('font-mono', prop.required && 'font-medium')}>
-                      {name}
-                    </span>
+                    <span className={cn('font-mono', prop.required && 'font-medium')}>{name}</span>
                     <span className="text-muted-foreground">: {prop.type}</span>
                   </div>
                 ))}
               {Object.keys(schema.properties).length > 3 && (
-                <div className="text-[10px] text-muted-foreground">
+                <div className="text-muted-foreground text-[10px]">
                   ...{Object.keys(schema.properties).length - 3} more
                 </div>
               )}
@@ -305,7 +347,7 @@ export const SchemaNode = memo(function SchemaNode({ data, selected }: SchemaNod
           )}
 
           {schema.description && (
-            <div className="mt-2 text-[10px] text-muted-foreground line-clamp-2">
+            <div className="text-muted-foreground mt-2 line-clamp-2 text-[10px]">
               {schema.description}
             </div>
           )}

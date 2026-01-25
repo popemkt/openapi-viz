@@ -6,6 +6,7 @@ export type ViewMode = 'editor' | 'graph' | 'split';
 export type Theme = 'light' | 'dark' | 'system';
 export type CompactLevel = 'normal' | 'compact' | 'minimal';
 export type LayoutDirection = 'LR' | 'TB' | 'RL' | 'BT';
+export type LayoutEngine = 'dagre' | 'elk';
 
 interface UIState {
   viewMode: ViewMode;
@@ -28,6 +29,9 @@ interface UIState {
   // Node scale setting
   nodeScale: number;
 
+  // Layout engine selection
+  layoutEngine: LayoutEngine;
+
   setViewMode: (mode: ViewMode) => void;
   setSplitPosition: (position: number) => void;
   toggleDetailPanel: () => void;
@@ -43,6 +47,7 @@ interface UIState {
   setRankSpacing: (spacing: number) => void;
   setNodeSpacing: (spacing: number) => void;
   setNodeScale: (scale: number) => void;
+  setLayoutEngine: (engine: LayoutEngine) => void;
 }
 
 const COMPACT_LEVEL_ORDER: CompactLevel[] = ['normal', 'compact', 'minimal'];
@@ -70,12 +75,14 @@ export const useUIStore = create<UIState>()(
       // Node scale - default is 1.0 (100%)
       nodeScale: 1,
 
+      // Layout engine - default is Dagre
+      layoutEngine: 'dagre',
+
       setViewMode: (mode) => set({ viewMode: mode }),
 
       setSplitPosition: (position) => set({ splitPosition: position }),
 
-      toggleDetailPanel: () =>
-        set((state) => ({ detailPanelOpen: !state.detailPanelOpen })),
+      toggleDetailPanel: () => set((state) => ({ detailPanelOpen: !state.detailPanelOpen })),
 
       setDetailPanelOpen: (open) => set({ detailPanelOpen: open }),
 
@@ -85,8 +92,7 @@ export const useUIStore = create<UIState>()(
 
       setSchemaNameDisplayMode: (mode) => set({ schemaNameDisplayMode: mode }),
 
-      setEndpointPathDisplayMode: (mode) =>
-        set({ endpointPathDisplayMode: mode }),
+      setEndpointPathDisplayMode: (mode) => set({ endpointPathDisplayMode: mode }),
 
       setCompactLevel: (level) => set({ compactLevel: level }),
 
@@ -106,6 +112,8 @@ export const useUIStore = create<UIState>()(
       setNodeSpacing: (spacing) => set({ nodeSpacing: spacing }),
 
       setNodeScale: (scale) => set({ nodeScale: scale }),
+
+      setLayoutEngine: (engine) => set({ layoutEngine: engine }),
     }),
     {
       name: 'openapi-viz-ui',
