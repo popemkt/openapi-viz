@@ -8,16 +8,5 @@
   "complexity": "moderate",
   "dependencies": [],
   "createdAt": "2026-01-25T05:09:36.661Z",
-  "updatedAt": "2026-01-25T05:09:36.661Z",
-  "skipTests": false,
-  "model": "claude-opus",
-  "thinkingLevel": "none",
-  "reasoningEffort": "none",
-  "imagePaths": [],
-  "textFilePaths": [],
-  "branchName": "main",
-  "planningMode": "lite",
-  "requirePlanApproval": false,
-  "workMode": "current",
-  "descriptionHistory": []
+  "updatedAt": "2026-01-25T05:09:36.661Z"
 }
