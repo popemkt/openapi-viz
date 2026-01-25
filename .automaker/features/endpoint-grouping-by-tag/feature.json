@@ -1,0 +1,12 @@
+{
+  "id": "endpoint-grouping-by-tag",
+  "category": "UI",
+  "title": "Visual Endpoint Grouping by Tag",
+  "description": "Automatically group endpoint nodes into visual clusters or containers based on their OpenAPI tags. Improves navigation for large APIs with hundreds of endpoints organized by functional area.",
+  "status": "backlog",
+  "priority": 1,
+  "complexity": "moderate",
+  "dependencies": [],
+  "createdAt": "2026-01-25T05:09:36.660Z",
+  "updatedAt": "2026-01-25T05:09:36.660Z"
+}

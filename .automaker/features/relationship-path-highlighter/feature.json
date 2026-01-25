@@ -1,0 +1,12 @@
+{
+  "id": "relationship-path-highlighter",
+  "category": "UI",
+  "title": "Relationship Path Highlighter",
+  "description": "Highlight all edges and nodes along the path between two selected nodes, showing the complete data flow. Useful for tracing how request data flows through schemas to responses.",
+  "status": "backlog",
+  "priority": 1,
+  "complexity": "moderate",
+  "dependencies": [],
+  "createdAt": "2026-01-25T05:09:36.662Z",
+  "updatedAt": "2026-01-25T05:09:36.662Z"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "openapi-version-comparison",
+  "category": "Core",
+  "title": "Spec Version Comparison",
+  "description": "Load two OpenAPI specifications and display a diff view showing added/removed/modified endpoints and schemas with visual indicators on the graph. Enables API versioning review and breaking change detection.",
+  "status": "backlog",
+  "priority": 2,
+  "complexity": "complex",
+  "dependencies": [],
+  "createdAt": "2026-01-25T05:09:36.662Z",
+  "updatedAt": "2026-01-25T05:09:36.662Z"
+}

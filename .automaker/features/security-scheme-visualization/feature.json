@@ -1,0 +1,12 @@
+{
+  "id": "security-scheme-visualization",
+  "category": "Core",
+  "title": "Security Scheme Visualization",
+  "description": "Display security requirements (OAuth scopes, API keys, bearer tokens) on endpoint nodes and show which endpoints share security schemes. Helps security audits and access control planning.",
+  "status": "backlog",
+  "priority": 1,
+  "complexity": "moderate",
+  "dependencies": [],
+  "createdAt": "2026-01-25T05:09:36.663Z",
+  "updatedAt": "2026-01-25T05:09:36.663Z"
+}

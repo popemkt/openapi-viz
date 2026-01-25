@@ -1,0 +1,12 @@
+{
+  "id": "graph-layout-presets",
+  "category": "UI",
+  "title": "Layout Presets and Custom Saves",
+  "description": "Provide preset layout configurations (compact, detailed, hierarchical, circular) and allow users to save custom layout settings with names. Enables quick switching between different visualization styles.",
+  "status": "backlog",
+  "priority": 2,
+  "complexity": "simple",
+  "dependencies": [],
+  "createdAt": "2026-01-25T05:09:36.665Z",
+  "updatedAt": "2026-01-25T05:09:36.665Z"
+}

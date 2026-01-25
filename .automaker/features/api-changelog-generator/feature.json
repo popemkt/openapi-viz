@@ -1,0 +1,14 @@
+{
+  "id": "api-changelog-generator",
+  "category": "Core",
+  "title": "API Changelog Generator",
+  "description": "Compare current spec against previous versions and automatically generate a human-readable changelog with categorized changes (new endpoints, modified schemas, breaking changes). Streamlines release documentation.",
+  "status": "backlog",
+  "priority": 2,
+  "complexity": "complex",
+  "dependencies": [
+    "openapi-version-comparison"
+  ],
+  "createdAt": "2026-01-25T05:09:36.668Z",
+  "updatedAt": "2026-01-25T05:09:36.668Z"
+}

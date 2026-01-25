@@ -1,0 +1,12 @@
+{
+  "id": "example-data-preview",
+  "category": "UI",
+  "title": "Example Data Preview",
+  "description": "Display OpenAPI examples inline in schema nodes and detail panel with formatted JSON/XML preview. Enables quick understanding of expected data shapes without reading raw schemas.",
+  "status": "backlog",
+  "priority": 1,
+  "complexity": "simple",
+  "dependencies": [],
+  "createdAt": "2026-01-25T05:09:36.666Z",
+  "updatedAt": "2026-01-25T05:09:36.666Z"
+}

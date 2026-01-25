@@ -1,0 +1,12 @@
+{
+  "id": "custom-node-annotations",
+  "category": "UI",
+  "title": "Custom Node Annotations",
+  "description": "Allow users to add custom notes, labels, and color tags to nodes for documentation or review purposes. Annotations persist in browser storage and can be exported with the graph.",
+  "status": "backlog",
+  "priority": 2,
+  "complexity": "simple",
+  "dependencies": [],
+  "createdAt": "2026-01-25T05:09:36.663Z",
+  "updatedAt": "2026-01-25T05:09:36.663Z"
+}

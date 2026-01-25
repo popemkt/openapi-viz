@@ -1,0 +1,12 @@
+{
+  "id": "url-based-state-sharing",
+  "category": "Core",
+  "title": "URL-based State Sharing",
+  "description": "Encode current view state (filters, layout, selected nodes, zoom level) in URL parameters for sharing specific graph views with team members. Enables collaboration and documentation linking.",
+  "status": "backlog",
+  "priority": 2,
+  "complexity": "moderate",
+  "dependencies": [],
+  "createdAt": "2026-01-25T05:09:36.668Z",
+  "updatedAt": "2026-01-25T05:09:36.668Z"
+}

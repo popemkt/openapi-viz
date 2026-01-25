@@ -1,0 +1,14 @@
+{
+  "id": "endpoint-dependency-graph",
+  "category": "Analytics",
+  "title": "Endpoint Dependency Impact Analysis",
+  "description": "Show impact analysis for schema changes by highlighting all endpoints that would be affected if a selected schema is modified. Critical for understanding breaking change implications.",
+  "status": "backlog",
+  "priority": 1,
+  "complexity": "moderate",
+  "dependencies": [
+    "relationship-path-highlighter"
+  ],
+  "createdAt": "2026-01-25T05:09:36.666Z",
+  "updatedAt": "2026-01-25T05:09:36.666Z"
+}

@@ -10,22 +10,32 @@
     <technology>React 19</technology>
     <technology>TypeScript 5.9</technology>
     <technology>Vite 7</technology>
-    <technology>Zustand 5 (state management)</technology>
-    <technology>@xyflow/react (React Flow) - graph visualization</technology>
-    <technology>Monaco Editor (@monaco-editor/react) - code editor</technology>
-    <technology>Dagre - graph layout algorithm</technology>
-    <technology>ELK.js - advanced graph layout engine</technology>
-    <technology>Tailwind CSS 4.0 with OKLCH colors</technology>
-    <technology>Radix UI - accessible UI components</technology>
-    <technology>html-to-image - export functionality</technology>
-    <technology>@readme/openapi-parser - OpenAPI validation</technology>
-    <technology>yaml - YAML parsing</technology>
-    <technology>Vitest - testing framework</technology>
-    <technology>@testing-library/react - React testing utilities</technology>
-    <technology>pnpm - package manager</technology>
-    <technology>ESLint - linting</technology>
-    <technology>Prettier - code formatting</technology>
-    <technology>Web Workers - off-thread computation</technology>
+    <technology>Zustand 5</technology>
+    <technology>@xyflow/react (React Flow)</technology>
+    <technology>Monaco Editor (@monaco-editor/react)</technology>
+    <technology>Dagre</technology>
+    <technology>ELK.js</technology>
+    <technology>Tailwind CSS 4</technology>
+    <technology>Radix UI</technology>
+    <technology>html-to-image</technology>
+    <technology>@readme/openapi-parser</technology>
+    <technology>yaml</technology>
+    <technology>Vitest</technology>
+    <technology>@testing-library/react</technology>
+    <technology>pnpm</technology>
+    <technology>ESLint 9</technology>
+    <technology>Prettier</technology>
+    <technology>Web Workers</technology>
+    <technology>PostCSS</technology>
+    <technology>Autoprefixer</technology>
+    <technology>Lucide React</technology>
+    <technology>react-markdown</technology>
+    <technology>react-resizable-panels</technology>
+    <technology>class-variance-authority</technology>
+    <technology>clsx</technology>
+    <technology>tailwind-merge</technology>
+    <technology>jsdom</technology>
+    <technology>tw-animate-css</technology>
   </technology_stack>
 
   <core_capabilities>

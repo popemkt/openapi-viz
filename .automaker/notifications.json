@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "notifications": [
+    {
+      "id": "5161c3ca-5675-4f70-9e9a-401dd98e29c8",
+      "type": "spec_regeneration_complete",
+      "title": "Spec Generation Complete",
+      "message": "Created 20 features from the project specification.",
+      "createdAt": "2026-01-25T05:09:36.671Z",
+      "read": false,
+      "dismissed": false,
+      "projectPath": "/home/popemkt/ZenflowProjects/openapi-viz"
+    },
+    {
+      "id": "e4cc5029-933a-45b4-bc7a-c0218e634b3a",
+      "type": "spec_regeneration_complete",
+      "title": "Spec Sync Complete",
+      "message": "Added 26 technologies, Removed 16 technologies",
+      "createdAt": "2026-01-25T05:11:37.547Z",
+      "read": false,
+      "dismissed": false,
+      "projectPath": "/home/popemkt/ZenflowProjects/openapi-viz"
+    }
+  ]
+}

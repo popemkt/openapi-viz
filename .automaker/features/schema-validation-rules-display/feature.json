@@ -1,0 +1,12 @@
+{
+  "id": "schema-validation-rules-display",
+  "category": "UI",
+  "title": "Schema Validation Rules Display",
+  "description": "Display JSON Schema validation rules (min/max length, pattern, format, enum values, required fields) directly on schema nodes and in the detail panel. Provides developers with immediate visibility into API constraints without navigating to the source.",
+  "status": "backlog",
+  "priority": 1,
+  "complexity": "simple",
+  "dependencies": [],
+  "createdAt": "2026-01-25T05:09:36.659Z",
+  "updatedAt": "2026-01-25T05:09:36.659Z"
+}

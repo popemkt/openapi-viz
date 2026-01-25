@@ -1,0 +1,12 @@
+{
+  "id": "interactive-graph-tour",
+  "category": "UI",
+  "title": "Interactive Feature Tour",
+  "description": "Provide a guided walkthrough for new users explaining graph navigation, filtering, multi-select, and other features with interactive tooltips. Improves onboarding experience.",
+  "status": "backlog",
+  "priority": 3,
+  "complexity": "simple",
+  "dependencies": [],
+  "createdAt": "2026-01-25T05:09:36.667Z",
+  "updatedAt": "2026-01-25T05:09:36.667Z"
+}

@@ -1,0 +1,14 @@
+{
+  "id": "collaboration-comments",
+  "category": "Collaboration",
+  "title": "Graph Collaboration Comments",
+  "description": "Add a commenting system where users can attach threaded discussions to specific nodes or edges. Comments include timestamps, author info, and can be resolved/unresolved for API review workflows.",
+  "status": "backlog",
+  "priority": 3,
+  "complexity": "complex",
+  "dependencies": [
+    "custom-node-annotations"
+  ],
+  "createdAt": "2026-01-25T05:09:36.670Z",
+  "updatedAt": "2026-01-25T05:09:36.670Z"
+}

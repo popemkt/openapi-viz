@@ -1,0 +1,12 @@
+{
+  "id": "graph-search-with-preview",
+  "category": "UI",
+  "title": "Enhanced Search with Preview",
+  "description": "Upgrade search to show live preview panel with matching results, property paths, and description snippets. Click results to focus and highlight nodes on the graph.",
+  "status": "backlog",
+  "priority": 1,
+  "complexity": "moderate",
+  "dependencies": [],
+  "createdAt": "2026-01-25T05:09:36.669Z",
+  "updatedAt": "2026-01-25T05:09:36.669Z"
+}

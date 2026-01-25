@@ -1,0 +1,12 @@
+{
+  "id": "batch-spec-validation",
+  "category": "Core",
+  "title": "Batch Specification Validation",
+  "description": "Load and validate multiple OpenAPI specifications simultaneously, showing validation results in a dashboard. Useful for teams maintaining multiple API services.",
+  "status": "backlog",
+  "priority": 3,
+  "complexity": "moderate",
+  "dependencies": [],
+  "createdAt": "2026-01-25T05:09:36.670Z",
+  "updatedAt": "2026-01-25T05:09:36.670Z"
+}

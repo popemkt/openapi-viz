@@ -1,0 +1,12 @@
+{
+  "id": "api-coverage-metrics",
+  "category": "Analytics",
+  "title": "API Documentation Coverage Metrics",
+  "description": "Calculate and display metrics about documentation completeness (descriptions, examples, response schemas, parameter descriptions). Shows percentage coverage and highlights undocumented endpoints/schemas.",
+  "status": "backlog",
+  "priority": 2,
+  "complexity": "moderate",
+  "dependencies": [],
+  "createdAt": "2026-01-25T05:09:36.661Z",
+  "updatedAt": "2026-01-25T05:09:36.661Z"
+}

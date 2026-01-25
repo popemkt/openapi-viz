@@ -1,0 +1,12 @@
+{
+  "id": "schema-complexity-score",
+  "category": "Analytics",
+  "title": "Schema Complexity Scoring",
+  "description": "Calculate complexity metrics for schemas (nesting depth, property count, composition complexity) and display scores with color coding. Helps identify overly complex schemas needing refactoring.",
+  "status": "backlog",
+  "priority": 2,
+  "complexity": "moderate",
+  "dependencies": [],
+  "createdAt": "2026-01-25T05:09:36.668Z",
+  "updatedAt": "2026-01-25T05:09:36.668Z"
+}
