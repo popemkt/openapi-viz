@@ -1,0 +1,63 @@
+{
+  "category": "Uncategorized",
+  "description": "## Parent Task Context (Already Completed)\n\n> **Note:** The following parent task has already been completed. This context is provided to help you understand the background and requirements for this sub-task. Do not re-implement the parent task - focus only on the new sub-task described below.\n\n### Schema Inheritance Tree View\n\n**Description:** Add a dedicated panel showing schema inheritance hierarchies for allOf/oneOf/anyOf compositions with a tree structure. Enables quick understanding of schema polymorphism and composition patterns.\n\n---\n\n## Task Description\n\nFix bug, the panel is obscured, handle cannot resize. Try to make it fit in the current system",
+  "title": "Fix panel visibility and enable resizing",
+  "images": [],
+  "imagePaths": [],
+  "textFilePaths": [],
+  "skipTests": false,
+  "model": "claude-opus",
+  "thinkingLevel": "none",
+  "reasoningEffort": "none",
+  "branchName": "main",
+  "priority": 2,
+  "planningMode": "spec",
+  "requirePlanApproval": false,
+  "dependencies": [
+    "schema-inheritance-visualization"
+  ],
+  "workMode": "current",
+  "titleGenerating": false,
+  "status": "pipeline_step_mktbd59d_ypdqr3",
+  "id": "feature-1769319342321-4rhjaaous",
+  "descriptionHistory": [
+    {
+      "description": "## Parent Task Context (Already Completed)\n\n> **Note:** The following parent task has already been completed. This context is provided to help you understand the background and requirements for this sub-task. Do not re-implement the parent task - focus only on the new sub-task described below.\n\n### Schema Inheritance Tree View\n\n**Description:** Add a dedicated panel showing schema inheritance hierarchies for allOf/oneOf/anyOf compositions with a tree structure. Enables quick understanding of schema polymorphism and composition patterns.\n\n---\n\n## Task Description\n\nFix bug, the panel is obscured, handle cannot resize. Try to make it fit in the current system",
+      "timestamp": "2026-01-25T05:35:42.462Z",
+      "source": "initial"
+    }
+  ],
+  "startedAt": "2026-01-25T05:47:44.582Z",
+  "updatedAt": "2026-01-25T05:49:35.666Z",
+  "planSpec": {
+    "status": "approved",
+    "version": 1,
+    "reviewedByUser": false,
+    "content": "🔧 Tool: Glob\nInput: {\n  \"pattern\": \"src/features/inheritance-panel/**/*\"\n}\n\n🔧 Tool: Glob\nInput: {\n  \"pattern\": \"src/**/*.tsx\"\n}\n\n🔧 Tool: Read\nInput: {\n  \"file_path\": \"/home/popemkt/ZenflowProjects/openapi-viz/src/app/Layout.tsx\"\n}\n\n🔧 Tool: Read\nInput: {\n  \"file_path\": \"/home/popemkt/ZenflowProjects/openapi-viz/src/features/inheritance-panel/components/SchemaInheritancePanel.tsx\"\n}\n\n🔧 Tool: Read\nInput: {\n  \"file_path\": \"/home/popemkt/ZenflowProjects/openapi-viz/src/app/MainContent.tsx\"\n}\n\n🔧 Tool: Read\nInput: {\n  \"file_path\": \"/home/popemkt/ZenflowProjects/openapi-viz/src/components/ui/resizable.tsx\"\n}\n# Specification: Fix Schema Inheritance Panel Obscured/Non-resizable Issue\n\n## 1. Problem\nThe Schema Inheritance Panel is obscured and its resize handle is not functioning correctly, preventing users from resizing the panel. The panel nesting structure causes z-index and layout conflicts when combined with the detail panel.\n\n## 2. Solution\nFix the panel layout by ensuring proper z-index stacking for resize handles and restructuring the panel composition order so the inheritance panel handle is accessible.\n\n## 3. Acceptance Criteria\n- **GIVEN** the inheritance panel is open, **WHEN** the user hovers over the resize handle, **THEN** the handle is visible and highlighted\n- **GIVEN** the inheritance panel is open, **WHEN** the user drags the resize handle, **THEN** the panel resizes correctly\n- **GIVEN** both inheritance panel and detail panel are open, **WHEN** viewing the layout, **THEN** neither panel obscures the other's resize handles\n- **GIVEN** the inheritance panel is open, **WHEN** viewing the panel content, **THEN** the full panel content is visible and not cut off\n\n## 4. Files to Modify\n| File | Purpose | Action |\n|------|---------|--------|\n| src/app/MainContent.tsx | Fix panel nesting order and layout structure | modify |\n| src/components/ui/resizable.tsx | Ensure resize handles have proper z-index | modify |\n\n## 5. Implementation Tasks\n```tasks\n- [ ] T001: Fix panel composition order - wrap detail panel first, then inheritance panel on top to ensure proper z-index stacking | File: src/app/MainContent.tsx\n- [ ] T002: Increase z-index on resize handles to ensure they're always accessible | File: src/components/ui/resizable.tsx\n- [ ] T003: Add overflow-hidden to panel containers to prevent content from bleeding through handles | File: src/app/MainContent.tsx\n```\n\n## 6. Verification\n1. Open the application with an OpenAPI spec loaded\n2. Toggle the Schema Inheritance Panel open via the GitBranch icon button\n3. Verify the panel is fully visible on the right side\n4. Verify the resize handle between main content and inheritance panel is visible and hoverable\n5. Drag the resize handle left/right and confirm the panel resizes smoothly\n6. Open the detail panel (bottom) as well and confirm both panels work independently\n7. Verify all resize handles remain accessible when both panels are open",
+    "generatedAt": "2026-01-25T05:36:54.801Z",
+    "tasks": [
+      {
+        "id": "T001",
+        "description": "Fix panel composition order - wrap detail panel first, then inheritance panel on top to ensure proper z-index stacking",
+        "filePath": "src/app/MainContent.tsx",
+        "status": "pending"
+      },
+      {
+        "id": "T002",
+        "description": "Increase z-index on resize handles to ensure they're always accessible",
+        "filePath": "src/components/ui/resizable.tsx",
+        "status": "pending"
+      },
+      {
+        "id": "T003",
+        "description": "Add overflow-hidden to panel containers to prevent content from bleeding through handles",
+        "filePath": "src/app/MainContent.tsx",
+        "status": "pending"
+      }
+    ],
+    "tasksTotal": 3,
+    "tasksCompleted": 3,
+    "approvedAt": "2026-01-25T05:36:54.803Z",
+    "currentTaskId": "T003"
+  }
+}

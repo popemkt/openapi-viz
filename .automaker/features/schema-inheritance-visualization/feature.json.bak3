@@ -3,12 +3,12 @@
   "category": "Core",
   "title": "Schema Inheritance Tree View",
   "description": "Add a dedicated panel showing schema inheritance hierarchies for allOf/oneOf/anyOf compositions with a tree structure. Enables quick understanding of schema polymorphism and composition patterns.",
-  "status": "in_progress",
+  "status": "backlog",
   "priority": 1,
   "complexity": "moderate",
   "dependencies": [],
   "createdAt": "2026-01-25T05:09:36.661Z",
-  "updatedAt": "2026-01-25T05:20:16.752Z",
+  "updatedAt": "2026-01-25T05:09:36.661Z",
   "skipTests": false,
   "model": "claude-opus",
   "thinkingLevel": "none",
@@ -19,6 +19,5 @@
   "planningMode": "lite",
   "requirePlanApproval": false,
   "workMode": "current",
-  "descriptionHistory": [],
-  "startedAt": "2026-01-25T05:20:16.583Z"
+  "descriptionHistory": []
 }

@@ -1,0 +1,11 @@
+{
+  "id": "evt-1769319559875-f8a845f8",
+  "trigger": "feature_success",
+  "timestamp": "2026-01-25T05:39:19.875Z",
+  "projectPath": "/home/popemkt/ZenflowProjects/openapi-viz",
+  "projectName": "openapi-viz",
+  "featureId": "feature-1769319342321-4rhjaaous",
+  "featureName": "Fix panel visibility and enable resizing",
+  "error": "Feature completed in 179s - auto-verified",
+  "passes": true
+}

@@ -8,14 +8,23 @@ function ResizablePanelGroup({ className, ...props }: React.ComponentProps<typeo
   return (
     <Group
       data-slot="resizable-panel-group"
-      className={cn('flex h-full w-full data-[panel-group-direction=vertical]:flex-col', className)}
+      className={cn('relative flex h-full w-full data-[panel-group-direction=vertical]:flex-col', className)}
       {...props}
     />
   );
 }
 
-function ResizablePanel({ ...props }: React.ComponentProps<typeof Panel>) {
-  return <Panel data-slot="resizable-panel" {...props} />;
+function ResizablePanel({
+  className,
+  ...props
+}: React.ComponentProps<typeof Panel>) {
+  return (
+    <Panel
+      data-slot="resizable-panel"
+      className={cn('relative overflow-hidden', className)}
+      {...props}
+    />
+  );
 }
 
 function ResizableHandle({
@@ -39,6 +48,8 @@ function ResizableHandle({
         'data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-1',
         'data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:translate-x-0',
         'data-[panel-group-direction=vertical]:after:-translate-y-1/2',
+        // Ensure resize handles are always accessible above other content
+        'z-[100]',
         className
       )}
       {...props}
@@ -46,11 +57,11 @@ function ResizableHandle({
       {withHandle && (
         <>
           {/* Handle for horizontal splits (left-right) - tall and narrow with vertical grip */}
-          <div className="bg-border hover:bg-muted-foreground/20 z-10 flex h-4 w-3 items-center justify-center rounded-sm border transition-colors group-data-[panel-group-direction=vertical]:hidden">
+          <div className="bg-border hover:bg-muted-foreground/20 z-[100] flex h-4 w-3 items-center justify-center rounded-sm border transition-colors group-data-[panel-group-direction=vertical]:hidden">
             <GripVerticalIcon className="size-2.5" />
           </div>
           {/* Handle for vertical splits (top-bottom) - short and wide with horizontal grip, centered */}
-          <div className="bg-border hover:bg-muted-foreground/20 z-10 hidden h-1.5 w-12 items-center justify-center rounded-sm border transition-colors group-data-[panel-group-direction=vertical]:flex">
+          <div className="bg-border hover:bg-muted-foreground/20 z-[100] hidden h-1.5 w-12 items-center justify-center rounded-sm border transition-colors group-data-[panel-group-direction=vertical]:flex">
             <GripHorizontalIcon className="size-4" />
           </div>
         </>

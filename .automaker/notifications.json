@@ -20,6 +20,50 @@
       "read": false,
       "dismissed": false,
       "projectPath": "/home/popemkt/ZenflowProjects/openapi-viz"
+    },
+    {
+      "id": "8086dea0-18db-4cf4-9a8e-12f4663dd3de",
+      "type": "feature_verified",
+      "title": "Feature Verified",
+      "message": "\"schema-inheritance-visualization\" has been verified and is complete.",
+      "createdAt": "2026-01-25T05:30:51.517Z",
+      "read": false,
+      "dismissed": false,
+      "featureId": "schema-inheritance-visualization",
+      "projectPath": "/home/popemkt/ZenflowProjects/openapi-viz"
+    },
+    {
+      "id": "5fef547e-6ca6-46da-8038-2219b6e459ca",
+      "type": "feature_verified",
+      "title": "Feature Verified",
+      "message": "\"feature-1769319342321-4rhjaaous\" has been verified and is complete.",
+      "createdAt": "2026-01-25T05:39:19.869Z",
+      "read": false,
+      "dismissed": false,
+      "featureId": "feature-1769319342321-4rhjaaous",
+      "projectPath": "/home/popemkt/ZenflowProjects/openapi-viz"
+    },
+    {
+      "id": "3e1767e7-1464-4995-85c0-b7cc3e5891de",
+      "type": "feature_verified",
+      "title": "Feature Verified",
+      "message": "\"feature-1769319342321-4rhjaaous\" has been verified and is complete.",
+      "createdAt": "2026-01-25T05:54:04.034Z",
+      "read": false,
+      "dismissed": false,
+      "featureId": "feature-1769319342321-4rhjaaous",
+      "projectPath": "/home/popemkt/ZenflowProjects/openapi-viz"
+    },
+    {
+      "id": "b829983a-9185-4711-81aa-c1287f15094f",
+      "type": "feature_verified",
+      "title": "Feature Verified",
+      "message": "\"feature-1769320006294-efy59dwez\" has been verified and is complete.",
+      "createdAt": "2026-01-25T06:04:02.783Z",
+      "read": false,
+      "dismissed": false,
+      "featureId": "feature-1769320006294-efy59dwez",
+      "projectPath": "/home/popemkt/ZenflowProjects/openapi-viz"
     }
   ]
 }

@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "events": [
+    {
+      "id": "evt-1769321042807-5da1a94a",
+      "trigger": "feature_success",
+      "timestamp": "2026-01-25T06:04:02.807Z",
+      "featureName": "",
+      "featureId": "feature-1769320006294-efy59dwez"
+    },
+    {
+      "id": "evt-1769320444057-16b24ea2",
+      "trigger": "feature_success",
+      "timestamp": "2026-01-25T05:54:04.057Z",
+      "featureName": "Fix panel visibility and enable resizing",
+      "featureId": "feature-1769319342321-4rhjaaous"
+    },
+    {
+      "id": "evt-1769320006449-7203ed6b",
+      "trigger": "feature_created",
+      "timestamp": "2026-01-25T05:46:46.449Z",
+      "featureId": "feature-1769320006294-efy59dwez"
+    },
+    {
+      "id": "evt-1769319559875-f8a845f8",
+      "trigger": "feature_success",
+      "timestamp": "2026-01-25T05:39:19.875Z",
+      "featureName": "Fix panel visibility and enable resizing",
+      "featureId": "feature-1769319342321-4rhjaaous"
+    },
+    {
+      "id": "evt-1769319342464-1dc1a91c",
+      "trigger": "feature_created",
+      "timestamp": "2026-01-25T05:35:42.464Z",
+      "featureId": "feature-1769319342321-4rhjaaous"
+    },
+    {
+      "id": "evt-1769319051532-4f4acf6c",
+      "trigger": "feature_success",
+      "timestamp": "2026-01-25T05:30:51.532Z",
+      "featureName": "Schema Inheritance Tree View",
+      "featureId": "schema-inheritance-visualization"
+    }
+  ]
+}

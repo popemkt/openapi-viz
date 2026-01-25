@@ -13,6 +13,7 @@ interface UIState {
   splitPosition: number;
   detailPanelOpen: boolean;
   detailPanelHeight: number;
+  inheritancePanelOpen: boolean;
   theme: Theme;
 
   // Graph view display settings
@@ -37,6 +38,8 @@ interface UIState {
   toggleDetailPanel: () => void;
   setDetailPanelOpen: (open: boolean) => void;
   setDetailPanelHeight: (height: number) => void;
+  toggleInheritancePanel: () => void;
+  setInheritancePanelOpen: (open: boolean) => void;
   setTheme: (theme: Theme) => void;
   setSchemaNameDisplayMode: (mode: DisplayMode) => void;
   setEndpointPathDisplayMode: (mode: DisplayMode) => void;
@@ -59,6 +62,7 @@ export const useUIStore = create<UIState>()(
       splitPosition: 50,
       detailPanelOpen: false,
       detailPanelHeight: 300,
+      inheritancePanelOpen: false,
       theme: 'system',
 
       // Graph view display settings - default to compact mode
@@ -87,6 +91,10 @@ export const useUIStore = create<UIState>()(
       setDetailPanelOpen: (open) => set({ detailPanelOpen: open }),
 
       setDetailPanelHeight: (height) => set({ detailPanelHeight: height }),
+
+      toggleInheritancePanel: () => set((state) => ({ inheritancePanelOpen: !state.inheritancePanelOpen })),
+
+      setInheritancePanelOpen: (open) => set({ inheritancePanelOpen: open }),
 
       setTheme: (theme) => set({ theme }),
 

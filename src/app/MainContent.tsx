@@ -8,6 +8,7 @@ import { useUIStore, useGraphStore } from '@/stores';
 import { TextEditor } from '@/features/editor';
 import { GraphCanvas } from '@/features/graph';
 import { DetailPanel } from '@/features/detail-panel';
+import { SchemaInheritancePanel } from '@/features/inheritance-panel';
 import { ReactFlowProvider } from '@xyflow/react';
 
 function GraphPane() {
@@ -29,7 +30,7 @@ function EditorPane() {
 }
 
 export function MainContent() {
-  const { viewMode, detailPanelOpen, setDetailPanelOpen } = useUIStore();
+  const { viewMode, detailPanelOpen, setDetailPanelOpen, inheritancePanelOpen } = useUIStore();
   const { selectedNodeIds } = useGraphStore();
 
   // Open detail panel when a node is selected
@@ -39,7 +40,8 @@ export function MainContent() {
     }
   }, [selectedNodeIds, setDetailPanelOpen]);
 
-  const mainContent = (() => {
+  // Build the main view content based on view mode
+  const renderMainView = () => {
     if (viewMode === 'editor') {
       return <EditorPane />;
     }
@@ -48,7 +50,7 @@ export function MainContent() {
       return <GraphPane />;
     }
 
-    // Split view
+    // Split view - always uses horizontal layout
     return (
       <ResizablePanelGroup orientation="horizontal">
         <ResizablePanel defaultSize={50} minSize={20}>
@@ -60,22 +62,47 @@ export function MainContent() {
         </ResizablePanel>
       </ResizablePanelGroup>
     );
-  })();
+  };
 
-  // If detail panel is open, show it in a vertical split
-  if (detailPanelOpen) {
+  // Build the content with horizontal layout (main + optional inheritance panel)
+  const renderHorizontalContent = () => {
+    const mainView = renderMainView();
+
+    if (!inheritancePanelOpen) {
+      return mainView;
+    }
+
+    // When inheritance panel is open, wrap in horizontal group
     return (
-      <ResizablePanelGroup orientation="vertical">
-        <ResizablePanel defaultSize={70} minSize={30}>
-          {mainContent}
+      <ResizablePanelGroup orientation="horizontal">
+        <ResizablePanel defaultSize={75} minSize={50}>
+          {mainView}
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={30} minSize={15}>
-          <DetailPanel />
+        <ResizablePanel defaultSize={25} minSize={15}>
+          <SchemaInheritancePanel />
         </ResizablePanel>
       </ResizablePanelGroup>
     );
+  };
+
+  // Build final layout with optional detail panel (vertical)
+  const horizontalContent = renderHorizontalContent();
+
+  if (!detailPanelOpen) {
+    return horizontalContent;
   }
 
-  return mainContent;
+  // When detail panel is open, wrap everything in vertical group
+  return (
+    <ResizablePanelGroup orientation="vertical">
+      <ResizablePanel defaultSize={70} minSize={30}>
+        {horizontalContent}
+      </ResizablePanel>
+      <ResizableHandle withHandle />
+      <ResizablePanel defaultSize={30} minSize={15}>
+        <DetailPanel />
+      </ResizablePanel>
+    </ResizablePanelGroup>
+  );
 }

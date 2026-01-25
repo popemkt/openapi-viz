@@ -187,6 +187,54 @@
         <location>src/components/ui/resizable.tsx</location>
       </file_locations>
     </feature>
+    <feature>
+      <name>Schema Inheritance Tree View</name>
+      <description>Add a dedicated panel showing schema inheritance hierarchies for allOf/oneOf/anyOf compositions with a tree structure. Enables quick understanding of schema polymorphism and composition patterns.</description>
+    </feature>
+    <feature>
+      <name>Fix panel visibility and enable resizing</name>
+      <description>## Parent Task Context (Already Completed)
+
+&gt; **Note:** The following parent task has already been completed. This context is provided to help you understand the background and requirements for this sub-task. Do not re-implement the parent task - focus only on the new sub-task described below.
+
+### Schema Inheritance Tree View
+
+**Description:** Add a dedicated panel showing schema inheritance hierarchies for allOf/oneOf/anyOf compositions with a tree structure. Enables quick understanding of schema polymorphism and composition patterns.
+
+---
+
+## Task Description
+
+Fix bug, the panel is obscured, handle cannot resize. Try to make it fit in the current system</description>
+    </feature>
+    <feature>
+      <name>Feature: feature-1769320006294-efy59dwez</name>
+      <description>## Parent Task Context (Already Completed)
+
+&gt; **Note:** The following parent task has already been completed. This context is provided to help you understand the background and requirements for this sub-task. Do not re-implement the parent task - focus only on the new sub-task described below.
+
+### Fix panel visibility and enable resizing
+
+**Description:** ## Parent Task Context (Already Completed)
+
+&gt; **Note:** The following parent task has already been completed. This context is provided to help you understand the background and requirements for this sub-task. Do not re-implement the parent task - focus only on the new sub-task described below.
+
+### Schema Inheritance Tree View
+
+**Description:** Add a dedicated panel showing schema inheritance hierarchies for allOf/oneOf/anyOf compositions with a tree structure. Enables quick understanding of schema polymorphism and composition patterns.
+
+---
+
+## Task Description
+
+Fix bug, the panel is obscured, handle cannot resize. Try to make it fit in the current system
+
+---
+
+## Task Description
+
+The thing is still not work. Can we make it so that works exactly like the same panel as the existing 2 we have,</description>
+    </feature>
   </implemented_features>
 
   <additional_requirements>

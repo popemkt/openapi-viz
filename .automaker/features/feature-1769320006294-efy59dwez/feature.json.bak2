@@ -1,0 +1,32 @@
+{
+  "category": "Uncategorized",
+  "description": "## Parent Task Context (Already Completed)\n\n> **Note:** The following parent task has already been completed. This context is provided to help you understand the background and requirements for this sub-task. Do not re-implement the parent task - focus only on the new sub-task described below.\n\n### Fix panel visibility and enable resizing\n\n**Description:** ## Parent Task Context (Already Completed)\n\n> **Note:** The following parent task has already been completed. This context is provided to help you understand the background and requirements for this sub-task. Do not re-implement the parent task - focus only on the new sub-task described below.\n\n### Schema Inheritance Tree View\n\n**Description:** Add a dedicated panel showing schema inheritance hierarchies for allOf/oneOf/anyOf compositions with a tree structure. Enables quick understanding of schema polymorphism and composition patterns.\n\n---\n\n## Task Description\n\nFix bug, the panel is obscured, handle cannot resize. Try to make it fit in the current system\n\n---\n\n## Task Description\n\nThe thing is still not work. Can we make it so that works exactly like the same panel as the existing 2 we have,",
+  "title": "",
+  "images": [],
+  "imagePaths": [],
+  "textFilePaths": [],
+  "skipTests": false,
+  "model": "claude-opus",
+  "thinkingLevel": "high",
+  "reasoningEffort": "none",
+  "branchName": "main",
+  "priority": 2,
+  "planningMode": "lite",
+  "requirePlanApproval": false,
+  "dependencies": [
+    "feature-1769319342321-4rhjaaous"
+  ],
+  "workMode": "current",
+  "titleGenerating": "## Parent Task Context (Already Completed)\n\n> **Note:** The following parent task has already been completed. This context is provided to help you understand the background and requirements for this sub-task. Do not re-implement the parent task - focus only on the new sub-task described below.\n\n### Fix panel visibility and enable resizing\n\n**Description:** ## Parent Task Context (Already Completed)\n\n> **Note:** The following parent task has already been completed. This context is provided to help you understand the background and requirements for this sub-task. Do not re-implement the parent task - focus only on the new sub-task described below.\n\n### Schema Inheritance Tree View\n\n**Description:** Add a dedicated panel showing schema inheritance hierarchies for allOf/oneOf/anyOf compositions with a tree structure. Enables quick understanding of schema polymorphism and composition patterns.\n\n---\n\n## Task Description\n\nFix bug, the panel is obscured, handle cannot resize. Try to make it fit in the current system\n\n---\n\n## Task Description\n\nThe thing is still not work. Can we make it so that works exactly like the same panel as the existing 2 we have,",
+  "status": "in_progress",
+  "id": "feature-1769320006294-efy59dwez",
+  "descriptionHistory": [
+    {
+      "description": "## Parent Task Context (Already Completed)\n\n> **Note:** The following parent task has already been completed. This context is provided to help you understand the background and requirements for this sub-task. Do not re-implement the parent task - focus only on the new sub-task described below.\n\n### Fix panel visibility and enable resizing\n\n**Description:** ## Parent Task Context (Already Completed)\n\n> **Note:** The following parent task has already been completed. This context is provided to help you understand the background and requirements for this sub-task. Do not re-implement the parent task - focus only on the new sub-task described below.\n\n### Schema Inheritance Tree View\n\n**Description:** Add a dedicated panel showing schema inheritance hierarchies for allOf/oneOf/anyOf compositions with a tree structure. Enables quick understanding of schema polymorphism and composition patterns.\n\n---\n\n## Task Description\n\nFix bug, the panel is obscured, handle cannot resize. Try to make it fit in the current system\n\n---\n\n## Task Description\n\nThe thing is still not work. Can we make it so that works exactly like the same panel as the existing 2 we have,",
+      "timestamp": "2026-01-25T05:46:46.447Z",
+      "source": "initial"
+    }
+  ],
+  "startedAt": "2026-01-25T05:47:53.729Z",
+  "updatedAt": "2026-01-25T05:47:53.943Z"
+}

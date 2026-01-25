@@ -14,6 +14,7 @@ import {
   CheckCircleIcon,
   LoaderIcon,
   ChevronDownIcon,
+  GitBranchIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,7 +38,7 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { viewMode, setViewMode, theme, setTheme } = useUIStore();
+  const { viewMode, setViewMode, theme, setTheme, inheritancePanelOpen, toggleInheritancePanel } = useUIStore();
   const { fileName, isDirty, parseErrors, isLoading, parsedSpec } = useSpecStore();
   const { handleNew, handleOpen, handleSave, handleDrop, handleDragOver } = useFileOperations();
   const { handleExportHtml, handleExportPng, handleExportSvg } = useExport();
@@ -186,6 +187,21 @@ export function Layout({ children }: LayoutProps) {
 
         {/* Spacer */}
         <div className="flex-1" />
+
+        {/* Schema Inheritance Panel toggle */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={inheritancePanelOpen ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={toggleInheritancePanel}
+              className="mr-2"
+            >
+              <GitBranchIcon className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Schema Inheritance</TooltipContent>
+        </Tooltip>
 
         {/* View mode toggle - with labeled segmented control */}
         <SegmentedControl

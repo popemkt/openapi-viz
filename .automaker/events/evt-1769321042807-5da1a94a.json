@@ -1,0 +1,11 @@
+{
+  "id": "evt-1769321042807-5da1a94a",
+  "trigger": "feature_success",
+  "timestamp": "2026-01-25T06:04:02.807Z",
+  "projectPath": "/home/popemkt/ZenflowProjects/openapi-viz",
+  "projectName": "openapi-viz",
+  "featureId": "feature-1769320006294-efy59dwez",
+  "featureName": "",
+  "error": "Feature completed in 969s - auto-verified",
+  "passes": true
+}
